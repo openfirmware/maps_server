@@ -304,7 +304,7 @@ script 'create renderer database user' do
   cwd '/tmp'
   interpreter 'bash'
   user 'postgres'
-  not_if "psql postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='#{node['maps_server']['render_user']}}'\" | grep 1", user: 'postgres'
+  not_if "psql postgres -c \"SELECT rolname FROM pg_roles;\" | grep '#{node['maps_server']['render_user']}'", user: 'postgres'
 end
 
 script 'create OSM database' do
@@ -314,7 +314,7 @@ script 'create OSM database' do
   cwd '/tmp'
   interpreter 'bash'
   user 'postgres'
-  not_if "psql postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='osm'\" | grep 1", user: 'postgres'
+  not_if "psql postgres -c \"SELECT datname FROM pg_database;\" | grep 'osm'", user: 'postgres'
 end
 
 script 'update OSM database' do
