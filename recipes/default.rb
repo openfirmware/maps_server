@@ -39,6 +39,10 @@ package 'osm2pgsql'
 # Install Apache2
 package %w(apache2 apache2-dev)
 
+service 'apache2' do
+  action :nothing
+end
+
 # Install mapnik
 package %w(libmapnik3.0 libmapnik-dev mapnik-utils python3-mapnik)
 
@@ -460,6 +464,23 @@ end
 execute "enable mod_tile" do
   command "a2enmod tile"
   not_if { ::File.exists?("/etc/apache2/mods-enabled/tile.load") }
+end
+
+# Disable default apache site
+execute "disable default apache site" do
+  command "a2dissite 000-default"
+  only_if { ::File.exists?("/etc/apache2/sites-enabled/000-default.conf") }
+end
+
+# Create apache virtualhost for tile server
+template "/etc/apache2/sites-available/tileserver.conf" do
+  source "tileserver.conf.erb"
+end
+
+execute "enable tileserver apache site" do
+  command "a2ensite tileserver"
+  not_if { ::File.exists?("/etc/apache2/sites-enabled/tileserver.conf") }
+  notifies :reload, 'service[apache2]', :immediate
 end
 
 # TODO: Deploy a static website with [Leaflet][] for browsing the raster tiles
