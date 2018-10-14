@@ -194,3 +194,24 @@ shapefiles = [{
 shapefiles.each do |source|
   install_shapefiles(source[:url], "#{osm_carto_path}/data", source[:check])
 end
+
+# Install fonts for stylesheet
+package %w(fontconfig fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont)
+
+noto_emoji_path = "#{Chef::Config[:file_cache_path]}/noto-emoji"
+git noto_emoji_path do
+  depth 1
+  repository 'https://github.com/googlei18n/noto-emoji'
+end
+
+script "install noto-emoji" do
+  code <<-EOH
+  mv fonts/NotoEmoji-Regular.ttf /usr/local/share/fonts/.
+  fc-cache -f -v
+  EOH
+  cwd noto_emoji_path
+  interpreter 'bash'
+  user 'root'
+  group 'root'
+  not_if { ::File.exists?("/usr/local/share/fonts/NotoEmoji-Regular.ttf") }
+end
