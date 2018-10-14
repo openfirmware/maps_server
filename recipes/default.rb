@@ -361,7 +361,16 @@ script 'add indexes for openstreetmap-carto' do
 end
 
 
-# TODO: Optimize PostgreSQL for tile serving
+# Optimize PostgreSQL for tile serving
+rendering_conf = {}.merge(node['postgresql']['conf'])
+                   .merge(node['postgresql']['tile-conf'])
+
+template '/etc/postgresql/10/main/postgresql.conf' do
+  source 'postgresql.conf.erb'
+  variables rendering_conf
+  notifies :reload, 'service[postgresql]', :immediate
+end
+
 # TODO: Set up raster tile rendering for the stylesheet
 # TODO: Deploy a static website with [Leaflet][] for browsing the raster tiles
 # TODO: Deploy a static website with [OpenLayers][] for browsing the raster tiles
