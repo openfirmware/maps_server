@@ -14,6 +14,9 @@ default['maps_server']['stylesheets_prefix'] = '/srv/stylesheets'
 default['maps_server']['extract_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf'
 default['maps_server']['extract_checksum_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf.md5'
 
+## Rendering User
+default['maps_server']['render_user'] = 'render'
+
 ## PostgreSQL Original Configuration
 #
 # Adding more options will require editing 

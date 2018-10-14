@@ -274,17 +274,17 @@ end
 # Create database for OSM import
 script 'create renderer database user' do
   code <<-EOH
-    psql -c 'CREATE ROLE render WITH SUPERUSER LOGIN;'
+    psql -c 'CREATE ROLE #{node['maps_server']['render_user']} WITH SUPERUSER LOGIN;'
   EOH
   cwd '/tmp'
   interpreter 'bash'
   user 'postgres'
-  only_if "! psql postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='render'\"", user: 'postgres'
+  only_if "! psql postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='#{node['maps_server']['render_user']}}'\"", user: 'postgres'
 end
 
 script 'create OSM database' do
   code <<-EOH
-    psql -c "CREATE DATABASE osm WITH OWNER render ENCODING 'UTF-8';"
+    psql -c "CREATE DATABASE osm WITH OWNER #{node['maps_server']['render_user']} ENCODING 'UTF-8';"
   EOH
   cwd '/tmp'
   interpreter 'bash'
@@ -296,8 +296,8 @@ script 'update OSM database' do
   code <<-EOH
     psql osm -c "CREATE EXTENSION IF NOT EXISTS postgis;
     CREATE EXTENSION IF NOT EXISTS hstore;
-    ALTER TABLE geometry_columns OWNER TO render;
-    ALTER TABLE spatial_ref_sys OWNER TO render;"
+    ALTER TABLE geometry_columns OWNER TO #{node['maps_server']['render_user']};
+    ALTER TABLE spatial_ref_sys OWNER TO #{node['maps_server']['render_user']};"
   EOH
   cwd '/tmp'
   interpreter 'bash'
@@ -305,9 +305,9 @@ script 'update OSM database' do
 end
 
 # Add render user
-user 'render' do
+user node['maps_server']['render_user'] do
   comment 'Rendering backend user'
-  home '/home/render'
+  home "/home/#{node['maps_server']['render_user']}"
   manage_home true
   shell '/bin/false'
 end
@@ -317,10 +317,13 @@ end
 # Load data into database
 script "import extract" do
   code <<-EOH
-    sudo -u render osm2pgsql --host /var/run/postgresql --create --slim --drop \
-              --database osm --username render -C 2500 \
+    sudo -u #{node['maps_server']['render_user']} osm2pgsql \
+              --host /var/run/postgresql --create --slim --drop \
+              --username #{node['maps_server']['render_user']} \
+              --database osm -C 2500 \
               --tag-transform-script #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.lua \
-              --number-processes 4 --style #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.style \
+              --style #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.style \
+              --number-processes 4 \
               --hstore -E 4326 -G #{extract_file} &&
     date > #{node['maps_server']['data_prefix']}/extract/last-import
   EOH
@@ -334,7 +337,7 @@ end
 # Set up additional PostgreSQL indexes for the stylesheet
 script 'add indexes for openstreetmap-carto' do
   code <<-EOH
-    sudo -u render psql -d osm -f "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/indexes.sql" && \
+    sudo -u #{node['maps_server']['render_user']} psql -d osm -f "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/indexes.sql" && \
     date > #{node['maps_server']['data_prefix']}/extract/openstreetmap-carto-indexes
   EOH
   cwd node['maps_server']['stylesheets_prefix']
