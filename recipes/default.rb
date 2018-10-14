@@ -318,7 +318,20 @@ script "import extract" do
   not_if { ::File.exists?('/opt/extract/last-import') }
 end
 
-# TODO: Set up additional PostgreSQL indexes for the stylesheet
+# Set up additional PostgreSQL indexes for the stylesheet
+script 'add indexes for openstreetmap-carto' do
+  code <<-EOH
+    sudo -u render psql -d osm -f "/opt/openstreetmap-carto/indexes.sql" && \
+    date > /opt/extract/openstreetmap-carto-indexes
+  EOH
+  cwd '/opt'
+  interpreter 'bash'
+  user 'root'
+  timeout 3600
+  not_if { ::File.exists?('/opt/extract/openstreetmap-carto-indexes') }
+end
+
+
 # TODO: Optimize PostgreSQL for tile serving
 # TODO: Set up raster tile rendering for the stylesheet
 # TODO: Deploy a static website with [Leaflet][] for browsing the raster tiles
