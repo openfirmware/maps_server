@@ -95,3 +95,102 @@ git osm_carto_path do
   depth 1
   repository 'https://github.com/gravitystorm/openstreetmap-carto'
 end
+
+# Install shapefiles for openstreetmap-carto
+package 'unzip'
+
+directory "#{osm_carto_path}/data" do
+  action :create
+end
+
+# Install files from a gzipped tar file into a install directory.
+# tar will extract all contents into a single directory, ignoring any
+# directory structure inside the archive.
+# If `check_file` already exists, then it will not run.
+def install_tgz(file, install_directory, check_file)
+  basename = ::File.basename(file, ".tgz")
+
+  script "install #{file}" do
+    cwd ::File.dirname(file)
+    code <<-EOH
+    mkdir #{basename}
+    tar -C #{basename} -x -z -f #{file} --xform='s/^.+\///x'
+    mv #{basename}/* #{install_directory}
+    EOH
+    not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
+    group 'root'
+    interpreter 'bash'
+    user 'root'
+  end
+end
+
+# Install files from a zip file into a install directory.
+# zip will use -j to extract contents into a single directory, so zip
+# files that do or don't put their contents in a directory don't matter.
+# If `check_file` already exists, then it will not run.
+def install_zip(file, install_directory, check_file)
+  basename = ::File.basename(file, ".zip")
+
+  script "install #{file}" do
+    cwd ::File.dirname(file)
+    code <<-EOH
+    mkdir #{basename}
+    unzip -j -d #{basename} #{file}
+    mv #{basename}/* #{install_directory}
+    EOH
+    not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
+    group 'root'
+    interpreter 'bash'
+    user 'root'
+  end
+end
+
+# Download an archive from `url`, extract its contents, and move the
+# contents into `install_directory`.
+# If the downloaded archive file exists, the download step is skipped.
+# If `check_file` exists, the extraction/move step is skipped.
+def install_shapefiles(url, install_directory, check_file)
+  filename = ::File.basename(url)
+  download_path = "#{Chef::Config[:file_cache_path]}/#{filename}"
+
+  remote_file download_path do
+    source url
+    action :create_if_missing
+  end
+
+  extension = ::File.extname(filename)
+  case extension
+    when ".tgz"
+      install_tgz(download_path, install_directory, check_file)
+    when ".zip"
+      install_zip(download_path, install_directory, check_file)
+  end
+end
+
+# Specify shapefiles to download and extract.
+# check: skip extract step if this file exists
+# url: source of archive to download. Will not re-download file.
+shapefiles = [{
+  check: "#{osm_carto_path}/data/world_bnd_m.shp",
+  url: "https://planet.openstreetmap.org/historical-shapefiles/world_boundaries-spherical.tgz"
+},
+{
+  check: "#{osm_carto_path}/data/simplified_land_polygons.shp",
+  url: "http://data.openstreetmapdata.com/simplified-land-polygons-complete-3857.zip"
+},{
+  check: "#{osm_carto_path}/data/ne_110m_admin_0_boundary_lines_land.shp",
+  url: "http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_boundary_lines_land.zip"
+}, {
+  check: "#{osm_carto_path}/data/land_polygons.shp",
+  url: "http://data.openstreetmapdata.com/land-polygons-split-3857.zip"
+}, {
+  check: "#{osm_carto_path}/data/icesheet_polygons.shp",
+  url: "http://data.openstreetmapdata.com/antarctica-icesheet-polygons-3857.zip"
+}, {
+  check: "#{osm_carto_path}/data/icesheet_outlines.shp",
+  url: "http://data.openstreetmapdata.com/antarctica-icesheet-outlines-3857.zip"
+}]
+
+shapefiles.each do |source|
+  install_shapefiles(source[:url], "#{osm_carto_path}/data", source[:check])
+end
