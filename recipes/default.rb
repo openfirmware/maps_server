@@ -23,6 +23,10 @@ end
 
 package %w(postgresql-10 postgresql-client-10 postgresql-contrib libpq-dev)
 
+service 'postgresql' do
+  action :nothing
+end
+
 # Install GDAL
 package %w(gdal-bin gdal-data libgdal-dev libgdal20)
 
@@ -214,4 +218,14 @@ script "install noto-emoji" do
   user 'root'
   group 'root'
   not_if { ::File.exists?("/usr/local/share/fonts/NotoEmoji-Regular.ttf") }
+end
+
+import_conf = {}.merge(node['postgresql']['conf'])
+                .merge(node['postgresql']['import-conf'])
+
+# Optimize PostgreSQL for Imports
+template '/etc/postgresql/10/main/postgresql.conf' do
+  source 'postgresql.conf.erb'
+  variables import_conf
+  notifies :reload, 'service[postgresql]', :immediate
 end
