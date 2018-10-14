@@ -268,6 +268,7 @@ import_conf = {}.merge(node['postgresql']['conf'])
 template '/etc/postgresql/10/main/postgresql.conf' do
   source 'postgresql.conf.erb'
   variables import_conf
+  not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/last-import") }
   notifies :reload, 'service[postgresql]', :immediate
 end
 
