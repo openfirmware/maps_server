@@ -371,6 +371,29 @@ template '/etc/postgresql/10/main/postgresql.conf' do
   notifies :reload, 'service[postgresql]', :immediate
 end
 
-# TODO: Set up raster tile rendering for the stylesheet
+# Set up raster tile rendering for the stylesheet
+
+# Install Node.js for carto
+package %w(nodejs npm)
+
+# Update NPM
+execute "Update npm" do
+  command "npm i -g npm"
+end
+
+# Install carto
+execute "Install carto" do
+  command "npm i -g carto"
+  not_if "which carto"
+end
+
+# Compile the cartoCSS stylesheet to mapnik XML
+openstreetmap_carto_xml = "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/mapnik.xml"
+execute "compile openstreetmap-carto" do
+  command "carto project.mml > #{openstreetmap_carto_xml}"
+  cwd "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto"
+  not_if { ::File.exists?(openstreetmap_carto_xml) }
+end
+
 # TODO: Deploy a static website with [Leaflet][] for browsing the raster tiles
 # TODO: Deploy a static website with [OpenLayers][] for browsing the raster tiles
