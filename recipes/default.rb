@@ -299,6 +299,8 @@ user 'render' do
   shell '/bin/false'
 end
 
+# TODO: Crop extract to smaller region
+
 # Load data into database
 script "import extract" do
   code <<-EOH
@@ -315,3 +317,9 @@ script "import extract" do
   timeout 3600
   not_if { ::File.exists?('/opt/extract/last-import') }
 end
+
+# TODO: Set up additional PostgreSQL indexes for the stylesheet
+# TODO: Optimize PostgreSQL for tile serving
+# TODO: Set up raster tile rendering for the stylesheet
+# TODO: Deploy a static website with [Leaflet][] for browsing the raster tiles
+# TODO: Deploy a static website with [OpenLayers][] for browsing the raster tiles

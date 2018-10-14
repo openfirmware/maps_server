@@ -56,6 +56,7 @@ Including the default recipe, `maps_server` or `maps_server::default`, will set 
 * Download shapefiles
 * Install fonts for the stylesheet
 * Optimize PostgreSQL for imports
+* Crop extract to smaller region (optional)
 * Import OpenStreetMap data to PostgreSQL
 * Set up additional PostgreSQL indexes for the stylesheet
 * Optimize PostgreSQL for tile serving
