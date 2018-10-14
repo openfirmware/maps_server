@@ -183,8 +183,8 @@ def install_tgz(file, install_directory, check_file)
     cwd ::File.dirname(file)
     code <<-EOH
     mkdir -p #{basename} &&
-    tar -C #{basename} -x -z -f #{file} --xform='s#^.+/##x' &&
-    cp -r #{basename}/* #{install_directory}
+    tar -C #{install_directory} -x -z -f #{file} &&
+    cp -r #{basename} #{install_directory}/.
     EOH
     not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
     group 'root'
@@ -205,7 +205,7 @@ def install_zip(file, install_directory, check_file)
     code <<-EOH
     mkdir -p #{basename} &&
     unzip -j -d #{basename} #{file} &&
-    cp -r #{basename}/* #{install_directory}
+    cp -r #{basename} #{install_directory}/.
     EOH
     not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
     group 'root'
@@ -240,23 +240,23 @@ end
 # check: skip extract step if this file exists
 # url: source of archive to download. Will not re-download file.
 shapefiles = [{
-  check: "#{osm_carto_path}/data/world_bnd_m.shp",
+  check: "#{osm_carto_path}/data/world_boundaries-spherical/world_bnd_m.shp",
   url: "https://planet.openstreetmap.org/historical-shapefiles/world_boundaries-spherical.tgz"
 },
 {
-  check: "#{osm_carto_path}/data/simplified_land_polygons.shp",
+  check: "#{osm_carto_path}/data/simplified-land-polygons-complete-3857/simplified_land_polygons.shp",
   url: "http://data.openstreetmapdata.com/simplified-land-polygons-complete-3857.zip"
 },{
-  check: "#{osm_carto_path}/data/ne_110m_admin_0_boundary_lines_land.shp",
+  check: "#{osm_carto_path}/data/ne_110m_admin_0_boundary_lines_land/ne_110m_admin_0_boundary_lines_land.shp",
   url: "http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_boundary_lines_land.zip"
 }, {
-  check: "#{osm_carto_path}/data/land_polygons.shp",
+  check: "#{osm_carto_path}/data/land-polygons-split-3857/land_polygons.shp",
   url: "http://data.openstreetmapdata.com/land-polygons-split-3857.zip"
 }, {
-  check: "#{osm_carto_path}/data/icesheet_polygons.shp",
+  check: "#{osm_carto_path}/data/antarctica-icesheet-polygons-3857/icesheet_polygons.shp",
   url: "http://data.openstreetmapdata.com/antarctica-icesheet-polygons-3857.zip"
 }, {
-  check: "#{osm_carto_path}/data/icesheet_outlines.shp",
+  check: "#{osm_carto_path}/data/antarctica-icesheet-outlines-3857/icesheet_outlines.shp",
   url: "http://data.openstreetmapdata.com/antarctica-icesheet-outlines-3857.zip"
 }]
 
@@ -411,6 +411,15 @@ end
 execute "Install carto" do
   command "npm i -g carto"
   not_if "which carto"
+end
+
+# Update stylesheets with new DB name
+script 'update DB name in stylesheet' do
+  code <<-EOH
+  sed -i -e 's/dbname: "gis"/dbname: "osm"/' #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/project.mml
+  EOH
+  interpreter 'bash'
+  user 'root'
 end
 
 # Compile the cartoCSS stylesheet to mapnik XML
