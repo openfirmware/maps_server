@@ -5,7 +5,7 @@
 # Copyright:: 2018, James Badger, Apache-2.0 License.
 
 # Set locale
-locale 'en_US'
+locale node['maps_server']['locale']
 
 # Install PostgreSQL
 # Use the PostgreSQL Apt repository for latest versions.
@@ -43,7 +43,12 @@ package %w(apache2 apache2-dev)
 package %w(libmapnik3.0 libmapnik-dev mapnik-utils python3-mapnik)
 
 # Install mod_tile
-mod_tile_path = "#{Chef::Config[:file_cache_path]}/mod_tile"
+directory node['maps_server']['software_prefix'] do
+  recursive true
+  action :create
+end
+
+mod_tile_path = "#{node['maps_server']['software_prefix']}/mod_tile"
 git mod_tile_path do
   depth 1
   repository 'https://github.com/openstreetmap/mod_tile'
@@ -97,18 +102,20 @@ end
 extract_url = node['maps_server']['extract_url']
 extract_checksum_url = node['maps_server']['extract_checksum_url']
 
-directory "/opt/extract" do
+extract_path = "#{node['maps_server']['data_prefix']}/extract"
+directory extract_path do
+  recursive true
   action :create
 end
 
-extract_file = "/opt/extract/#{::File.basename(extract_url)}"
+extract_file = "#{extract_path}/#{::File.basename(extract_url)}"
 remote_file extract_file do
   source extract_url
   action :create_if_missing
 end
 
 if !(extract_checksum_url.nil? || extract_checksum_url.empty?)
-  extract_checksum_file = "/opt/extract/#{::File.basename(extract_checksum_url)}"
+  extract_checksum_file = "#{extract_path}/#{::File.basename(extract_checksum_url)}"
   remote_file extract_checksum_file do
     source extract_checksum_url
     action :create_if_missing
@@ -121,8 +128,14 @@ if !(extract_checksum_url.nil? || extract_checksum_url.empty?)
   end
 end
 
+# Create stylesheets directory
+directory node['maps_server']['stylesheets_prefix'] do
+  recursive true
+  action :create
+end
+
 # Install openstreetmap-carto
-osm_carto_path = "/opt/openstreetmap-carto"
+osm_carto_path = "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto"
 git osm_carto_path do
   depth 1
   repository 'https://github.com/gravitystorm/openstreetmap-carto'
@@ -145,9 +158,9 @@ def install_tgz(file, install_directory, check_file)
   script "install #{file}" do
     cwd ::File.dirname(file)
     code <<-EOH
-    mkdir #{basename}
-    tar -C #{basename} -x -z -f #{file} --xform='s/^.+\///x'
-    mv #{basename}/* #{install_directory}
+    mkdir -p #{basename} &&
+    tar -C #{basename} -x -z -f #{file} --xform='s#^.+/##x' &&
+    cp -r #{basename}/* #{install_directory}
     EOH
     not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
     group 'root'
@@ -166,9 +179,9 @@ def install_zip(file, install_directory, check_file)
   script "install #{file}" do
     cwd ::File.dirname(file)
     code <<-EOH
-    mkdir #{basename}
-    unzip -j -d #{basename} #{file}
-    mv #{basename}/* #{install_directory}
+    mkdir -p #{basename} &&
+    unzip -j -d #{basename} #{file} &&
+    cp -r #{basename}/* #{install_directory}
     EOH
     not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
     group 'root'
@@ -183,7 +196,7 @@ end
 # If `check_file` exists, the extraction/move step is skipped.
 def install_shapefiles(url, install_directory, check_file)
   filename = ::File.basename(url)
-  download_path = "#{Chef::Config[:file_cache_path]}/#{filename}"
+  download_path = "#{node['maps_server']['data_prefix']}/#{filename}"
 
   remote_file download_path do
     source url
@@ -230,7 +243,7 @@ end
 # Install fonts for stylesheet
 package %w(fontconfig fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont)
 
-noto_emoji_path = "#{Chef::Config[:file_cache_path]}/noto-emoji"
+noto_emoji_path = "#{node['maps_server']['software_prefix']}/noto-emoji"
 git noto_emoji_path do
   depth 1
   repository 'https://github.com/googlei18n/noto-emoji'
@@ -306,29 +319,29 @@ script "import extract" do
   code <<-EOH
     sudo -u render osm2pgsql --host /var/run/postgresql --create --slim --drop \
               --database osm --username render -C 2500 \
-              --tag-transform-script /opt/openstreetmap-carto/openstreetmap-carto.lua \
-              --number-processes 4 --style /opt/openstreetmap-carto/openstreetmap-carto.style \
+              --tag-transform-script #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.lua \
+              --number-processes 4 --style #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.style \
               --hstore -E 4326 -G #{extract_file} &&
-    date > /opt/extract/last-import
+    date > #{node['maps_server']['data_prefix']}/extract/last-import
   EOH
-  cwd '/opt'
+  cwd node['maps_server']['stylesheets_prefix']
   interpreter 'bash'
   user 'root'
   timeout 3600
-  not_if { ::File.exists?('/opt/extract/last-import') }
+  not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/last-import") }
 end
 
 # Set up additional PostgreSQL indexes for the stylesheet
 script 'add indexes for openstreetmap-carto' do
   code <<-EOH
-    sudo -u render psql -d osm -f "/opt/openstreetmap-carto/indexes.sql" && \
-    date > /opt/extract/openstreetmap-carto-indexes
+    sudo -u render psql -d osm -f "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/indexes.sql" && \
+    date > #{node['maps_server']['data_prefix']}/extract/openstreetmap-carto-indexes
   EOH
-  cwd '/opt'
+  cwd node['maps_server']['stylesheets_prefix']
   interpreter 'bash'
   user 'root'
   timeout 3600
-  not_if { ::File.exists?('/opt/extract/openstreetmap-carto-indexes') }
+  not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/openstreetmap-carto-indexes") }
 end
 
 
