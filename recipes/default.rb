@@ -399,6 +399,7 @@ package %w(nodejs npm)
 # Update NPM
 execute "Update npm" do
   command "npm i -g npm"
+  only_if "npm -v | grep -E '^[345]'"
 end
 
 # Install carto
