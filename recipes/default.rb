@@ -111,7 +111,7 @@ if !(extract_checksum_url.nil? || extract_checksum_url.empty?)
   extract_checksum_file = "/opt/extract/#{::File.basename(extract_checksum_url)}"
   remote_file extract_checksum_file do
     source extract_checksum_url
-    action :create
+    action :create_if_missing
   end
 
   execute 'validate extract' do
@@ -297,4 +297,21 @@ user 'render' do
   home '/home/render'
   manage_home true
   shell '/bin/false'
+end
+
+# Load data into database
+script "import extract" do
+  code <<-EOH
+    sudo -u render osm2pgsql --host /var/run/postgresql --create --slim --drop \
+              --database osm --username render -C 2500 \
+              --tag-transform-script /opt/openstreetmap-carto/openstreetmap-carto.lua \
+              --number-processes 4 --style /opt/openstreetmap-carto/openstreetmap-carto.style \
+              --hstore -E 4326 -G #{extract_file} &&
+    date > /opt/extract/last-import
+  EOH
+  cwd '/opt'
+  interpreter 'bash'
+  user 'root'
+  timeout 3600
+  not_if { ::File.exists?('/opt/extract/last-import') }
 end
