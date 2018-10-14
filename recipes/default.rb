@@ -40,7 +40,7 @@ package 'osm2pgsql'
 package %w(apache2 apache2-dev)
 
 # Install mapnik
-package %w(libmapnik3.0 libmapnik-dev mapnik-utils)
+package %w(libmapnik3.0 libmapnik-dev mapnik-utils python3-mapnik)
 
 # Install mod_tile
 mod_tile_path = "#{Chef::Config[:file_cache_path]}/mod_tile"
@@ -256,4 +256,45 @@ template '/etc/postgresql/10/main/postgresql.conf' do
   source 'postgresql.conf.erb'
   variables import_conf
   notifies :reload, 'service[postgresql]', :immediate
+end
+
+# Create database for OSM import
+script 'create renderer database user' do
+  code <<-EOH
+    psql -c 'CREATE ROLE render WITH SUPERUSER LOGIN;'
+  EOH
+  cwd '/tmp'
+  interpreter 'bash'
+  user 'postgres'
+  only_if "! psql postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='render'\"", user: 'postgres'
+end
+
+script 'create OSM database' do
+  code <<-EOH
+    psql -c "CREATE DATABASE osm WITH OWNER render ENCODING 'UTF-8';"
+  EOH
+  cwd '/tmp'
+  interpreter 'bash'
+  user 'postgres'
+  only_if "! psql postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='osm'\"", user: 'postgres'
+end
+
+script 'update OSM database' do
+  code <<-EOH
+    psql osm -c "CREATE EXTENSION IF NOT EXISTS postgis;
+    CREATE EXTENSION IF NOT EXISTS hstore;
+    ALTER TABLE geometry_columns OWNER TO render;
+    ALTER TABLE spatial_ref_sys OWNER TO render;"
+  EOH
+  cwd '/tmp'
+  interpreter 'bash'
+  user 'postgres'
+end
+
+# Add render user
+user 'render' do
+  comment 'Rendering backend user'
+  home '/home/render'
+  manage_home true
+  shell '/bin/false'
 end
