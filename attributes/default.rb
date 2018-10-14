@@ -1,3 +1,8 @@
+## Extract Source
+# Use PBF files only
+default['maps_server']['extract_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf'
+default['maps_server']['extract_checksum_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf.md5'
+
 ## PostgreSQL Original Configuration
 #
 # Adding more options will require editing 

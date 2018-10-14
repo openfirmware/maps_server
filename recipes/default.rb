@@ -93,6 +93,34 @@ execute 'mod_tile: ldconfig' do
   command 'ldconfig'
 end
 
+# Download Extract
+extract_url = node['maps_server']['extract_url']
+extract_checksum_url = node['maps_server']['extract_checksum_url']
+
+directory "/opt/extract" do
+  action :create
+end
+
+extract_file = "/opt/extract/#{::File.basename(extract_url)}"
+remote_file extract_file do
+  source extract_url
+  action :create_if_missing
+end
+
+if !(extract_checksum_url.nil? || extract_checksum_url.empty?)
+  extract_checksum_file = "/opt/extract/#{::File.basename(extract_checksum_url)}"
+  remote_file extract_checksum_file do
+    source extract_checksum_url
+    action :create
+  end
+
+  execute 'validate extract' do
+    command "md5sum --check #{extract_checksum_file}"
+    cwd ::File.dirname(extract_checksum_file)
+    user 'root'
+  end
+end
+
 # Install openstreetmap-carto
 osm_carto_path = "/opt/openstreetmap-carto"
 git osm_carto_path do

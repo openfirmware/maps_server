@@ -51,10 +51,10 @@ Including the default recipe, `maps_server` or `maps_server::default`, will set 
 * Install [Apache HTTP Server][] 2.4
 * Install [mapnik][]
 * Install [mod_tile][]
-* Install [CartoCSS stylesheets][openstreetmap-carto]
-* Install fonts for the stylesheet
 * Download [extract of OpenStreetMap data][GeoFabrik]
+* Download [CartoCSS stylesheets][openstreetmap-carto]
 * Download shapefiles
+* Install fonts for the stylesheet
 * Optimize PostgreSQL for imports
 * Import OpenStreetMap data to PostgreSQL
 * Set up additional PostgreSQL indexes for the stylesheet
