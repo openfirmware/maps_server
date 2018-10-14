@@ -340,8 +340,9 @@ end
 # TODO: Crop extract to smaller region
 
 # Load data into database
-script "import extract" do
-  code <<-EOH
+# TODO: Support forced reload of data to refresh database
+execute "import extract" do
+  command <<-EOH
     sudo -u #{node['maps_server']['render_user']} osm2pgsql \
               --host /var/run/postgresql --create --slim --drop \
               --username #{node['maps_server']['render_user']} \
@@ -353,7 +354,7 @@ script "import extract" do
     date > #{node['maps_server']['data_prefix']}/extract/last-import
   EOH
   cwd node['maps_server']['stylesheets_prefix']
-  interpreter 'bash'
+  live_stream true
   user 'root'
   timeout 3600
   not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/last-import") }
