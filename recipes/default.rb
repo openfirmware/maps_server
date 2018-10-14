@@ -335,6 +335,18 @@ script "import extract" do
   not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/last-import") }
 end
 
+script 'clean up database after import' do
+  code <<-EOH
+    sudo -u #{node['maps_server']['render_user']} psql -d osm -c "VACUUM FULL VERBOSE ANALYZE;" &&
+    date > #{node['maps_server']['data_prefix']}/extract/openstreetmap-carto-vacuum
+  EOH
+  cwd node['maps_server']['stylesheets_prefix']
+  interpreter 'bash'
+  user 'root'
+  timeout 3600
+  not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/openstreetmap-carto-vacuum") }
+end
+
 # Set up additional PostgreSQL indexes for the stylesheet
 script 'add indexes for openstreetmap-carto' do
   code <<-EOH
