@@ -94,6 +94,26 @@ execute 'mod_tile: install' do
   not_if { ::File.exist?('/usr/lib/apache2/modules/mod_tile.so') }
 end
 
+systemd_unit 'renderd.service' do
+  content <<-EOH
+  [Unit]
+  Description=Rendering daemon for Mapnik tiles
+
+  [Service]
+  User=render
+  RuntimeDirectory=renderd
+  ExecStart=/usr/local/bin/renderd -f -c /usr/local/etc/renderd.conf
+
+  [Install]
+  WantedBy=multi-user.target
+  EOH
+  action [:create, :enable, :start]
+end
+
+service 'renderd' do
+  action :nothing
+end
+
 execute 'mod_tile: ldconfig' do
   command 'ldconfig'
 end
@@ -393,6 +413,40 @@ execute "compile openstreetmap-carto" do
   command "carto project.mml > #{openstreetmap_carto_xml}"
   cwd "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto"
   not_if { ::File.exists?(openstreetmap_carto_xml) }
+end
+
+# Create tiles directory
+directory "/srv/tiles" do
+  recursive true
+  action :create
+end
+
+directory "/srv/tiles/openstreetmap-carto" do
+  recursive true
+  action :create
+end
+
+# Update renderd configuration for openstreetmap-carto
+styles = [{
+  name: "default",
+  uri: "/osm/",
+  tiledir: "/srv/tiles/openstreetmap-carto",
+  xml: openstreetmap_carto_xml,
+  host: "localhost",
+  tilesize: 256,
+  description: "openstreetmap-carto"
+}]
+
+template '/usr/local/etc/renderd.conf' do
+  source 'renderd.conf.erb'
+  variables(
+    num_threads: 4, 
+    tile_dir: '/srv/tiles', 
+    plugins_dir: "/usr/lib/mapnik/3.0/input",
+    font_dir: "/usr/share/fonts",
+    configurations: styles
+  )
+  notifies :reload, 'service[renderd]', :immediate
 end
 
 # TODO: Deploy a static website with [Leaflet][] for browsing the raster tiles

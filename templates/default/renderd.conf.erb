@@ -1,0 +1,28 @@
+[renderd]
+socketname=/var/run/renderd/renderd.sock
+num_threads=<%= @num_threads %>
+tile_dir=<%= @tile_dir %>
+stats_file=/var/run/renderd/renderd.stats
+
+[mapnik]
+plugins_dir=<%= @plugins_dir %>
+font_dir=<%= @font_dir %>
+font_dir_recurse=1
+
+<% for style in @configurations do %>
+[<%= style[:name] %>]
+URI=<%= style[:uri] %>
+TILEDIR=<%= style[:tiledir] %>
+XML=<%= style[:xml] %>
+HOST=<%= style[:host] %>
+TILESIZE=<%= style[:tilesize] %>
+MINZOOM=0
+MAXZOOM=18
+TYPE=png image/png
+DESCRIPTION=<%= style[:description] %>
+CORS=*
+ASPECTX=1
+ASPECTY=1
+SCALE=1.0
+
+<% end %>
