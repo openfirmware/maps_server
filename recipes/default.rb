@@ -450,5 +450,17 @@ template '/usr/local/etc/renderd.conf' do
   notifies :reload, 'service[renderd]', :immediate
 end
 
+# Install Apache mod_tile loader
+cookbook_file '/etc/apache2/mods-available/tile.load' do
+  source 'mod_tile.load'
+  action :create
+end
+
+# Enable mod_tile
+execute "enable mod_tile" do
+  command "a2enmod tile"
+  not_if { ::File.exists?("/etc/apache2/mods-enabled/tile.load") }
+end
+
 # TODO: Deploy a static website with [Leaflet][] for browsing the raster tiles
 # TODO: Deploy a static website with [OpenLayers][] for browsing the raster tiles
