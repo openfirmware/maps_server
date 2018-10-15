@@ -509,7 +509,8 @@ end
 # Deploy a static website with Leaflet for browsing the raster tiles
 template '/var/www/html/leaflet.html' do
   source 'leaflet.html.erb'
-  variables(latitude: 51.0452, longitude: -114.0625)
+  variables(latitude: node['maps_server']['viewers']['latitude'], 
+            longitude: node['maps_server']['viewers']['longitude'])
 end
 
 # TODO: Deploy a static website with OpenLayers for browsing the raster tiles

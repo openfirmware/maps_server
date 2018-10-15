@@ -17,6 +17,11 @@ default['maps_server']['extract_checksum_url'] = 'http://download.geofabrik.de/n
 ## Rendering User
 default['maps_server']['render_user'] = 'render'
 
+## Default Location for Web Clients
+# This location is Calgary, Canada
+default['maps_server']['viewers']['latitude'] = 51.0452
+default['maps_server']['viewers']['longitude'] = -114.0625
+
 ## PostgreSQL Original Configuration
 #
 # Adding more options will require editing 
