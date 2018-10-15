@@ -40,9 +40,13 @@ Do not do this, especially if you have not set up a smaller server yet. To put i
 
 [OSMF Servers]: https://hardware.openstreetmap.org
 
-## Default Recipe
+## Attributes
 
-Including the default recipe, `maps_server` or `maps_server::default`, will set up everything.
+All of the attributes in `attributes/default.rb` have been documented with default values and what they are used for in the recipes.
+
+## `default` Recipe
+
+Including the default recipe, `maps_server` or `maps_server::default`, will set up the database, web server, data extract, and import the data to PostgreSQL. It does not set up Apache/mod\_tile for serving raster tiles, see the `openstreetmap_carto` for that.
 
 * Install [PostgreSQL][] 10.5
 * Install [GDAL][]
@@ -50,36 +54,40 @@ Including the default recipe, `maps_server` or `maps_server::default`, will set 
 * Install [osm2pgsql][]
 * Install [Apache HTTP Server][] 2.4
 * Install [mapnik][]
-* Install [mod_tile][]
+* Install [mod\_tile][modtile]
 * Download [extract of OpenStreetMap data][GeoFabrik]
-* Download [CartoCSS stylesheets][openstreetmap-carto]
-* Download shapefiles
-* Install fonts for the stylesheet
+* Download [openstreetmap-carto][] for import scripts
 * Optimize PostgreSQL for imports
 * Crop extract to smaller region (optional)
 * Import OpenStreetMap data to PostgreSQL
-* Set up additional PostgreSQL indexes for the stylesheet
 * Optimize PostgreSQL for tile serving
-* Set up raster tile rendering for the stylesheet
-* Deploy a static website with [Leaflet][] for browsing the raster tiles
-* Deploy a static website with [OpenLayers][] for browsing the raster tiles
-* Set up automatic sync for diffs from OpenStreetMap?
-
-Note: Stylesheet and mod_tile configuration may be moved to a separate recipe, so that multiple stylesheets with different projections can be supported.
 
 [Apache HTTP Server]: https://httpd.apache.org
 [GDAL]: https://www.gdal.org
 [GeoFabrik]: http://download.geofabrik.de
-[Leaflet]: https://leafletjs.com
 [mapnik]: https://mapnik.org
-[mod_tile]: https://github.com/openstreetmap/mod_tile
-[OpenLayers]: http://openlayers.org
-[openstreetmap-carto]: https://github.com/gravitystorm/openstreetmap-carto
+[modtile]: https://github.com/openstreetmap/mod_tile
 [osm2pgsql]: https://github.com/openstreetmap/osm2pgsql
 [PostGIS]: http://postgis.net
 [PostgreSQL]: https://www.postgresql.org
 
-## CanVec Recipe
+## `openstreetmap_carto` Recipe
+
+Installs the openstreetmap-carto stylesheet, then sets up renderd and Apache. Also installs Leaflet/OpenLayers demo sites to `/leaflet.html` and `/openlayers.html`.
+
+* Download [CartoCSS stylesheets][openstreetmap-carto]
+* Download shapefiles
+* Install fonts for the stylesheet
+* Set up additional PostgreSQL indexes for the stylesheet
+* Set up raster tile rendering for the stylesheet
+* Deploy a static website with [Leaflet][] for browsing the raster tiles
+* Deploy a static website with [OpenLayers][] for browsing the raster tiles
+
+[Leaflet]: https://leafletjs.com
+[OpenLayers]: http://openlayers.org
+[openstreetmap-carto]: https://github.com/gravitystorm/openstreetmap-carto
+
+## `canvec` Recipe
 
 TODO: Will add an additional recipe for setting up a second database with data from Natural Resources Canada ([PDF](https://www.nrcan.gc.ca/sites/www.nrcan.gc.ca/files/earthsciences/pdf/CanVec_en.pdf))
 
@@ -87,13 +95,13 @@ TODO: Will add an additional recipe for setting up a second database with data f
 * Import into PostgreSQL using GDAL
 * Add indexes for the stylesheet
 
-## TileStrata Recipe
+## `tilestrata` Recipe
 
-TODO: Try using [TileStrata][] as an alternative to mod_tile for generating raster and vector tiles.
+TODO: Try using [TileStrata][] as an alternative to mod\_tile for generating raster and vector tiles.
 
 [TileStrata]: https://github.com/naturalatlas/tilestrata
 
-## Monitoring Recipe
+## `monitoring` Recipe
 
 TODO: Set up some kind of monitoring for viewing hardware usage and tile activity. The OSMF uses [Munin][] for these.
 
