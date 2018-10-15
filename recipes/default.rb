@@ -422,6 +422,12 @@ script 'update DB name in stylesheet' do
   user 'root'
 end
 
+# Update stylesheet to use EPSG:4326 for OSM data
+execute 'update projection in stylesheet' do
+  command %Q[perl -i -0pe 's/extents(\s+Datasource:\s+<<: \*osm2pgsql)/extents84$1/g' #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/project.mml]
+  user 'root'
+end
+
 # Compile the cartoCSS stylesheet to mapnik XML
 openstreetmap_carto_xml = "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/mapnik.xml"
 execute "compile openstreetmap-carto" do
