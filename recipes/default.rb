@@ -506,5 +506,10 @@ service "apache2" do
   action :reload
 end
 
-# TODO: Deploy a static website with [Leaflet][] for browsing the raster tiles
-# TODO: Deploy a static website with [OpenLayers][] for browsing the raster tiles
+# Deploy a static website with Leaflet for browsing the raster tiles
+template '/var/www/html/leaflet.html' do
+  source 'leaflet.html.erb'
+  variables(latitude: 51.0452, longitude: -114.0625)
+end
+
+# TODO: Deploy a static website with OpenLayers for browsing the raster tiles
