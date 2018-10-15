@@ -104,7 +104,7 @@ systemd_unit 'renderd.service' do
   Description=Rendering daemon for Mapnik tiles
 
   [Service]
-  User=render
+  User=#{node['maps_server']['render_user']}
   RuntimeDirectory=renderd
   ExecStart=/usr/local/bin/renderd -f -c /usr/local/etc/renderd.conf
 
@@ -433,19 +433,21 @@ end
 # Create tiles directory
 directory "/srv/tiles" do
   recursive true
+  owner node['maps_server']['render_user']
   action :create
 end
 
 directory "/srv/tiles/openstreetmap-carto" do
   recursive true
+  owner node['maps_server']['render_user']
   action :create
 end
 
 # Update renderd configuration for openstreetmap-carto
 styles = [{
-  name: "default",
+  name: "openstreetmap-carto",
   uri: "/osm/",
-  tiledir: "/srv/tiles/openstreetmap-carto",
+  tiledir: "/srv/tiles",
   xml: openstreetmap_carto_xml,
   host: "localhost",
   tilesize: 256,
@@ -461,7 +463,7 @@ template '/usr/local/etc/renderd.conf' do
     font_dir: "/usr/share/fonts",
     configurations: styles
   )
-  notifies :reload, 'service[renderd]', :immediate
+  notifies :restart, 'service[renderd]', :immediate
 end
 
 # Install Apache mod_tile loader
