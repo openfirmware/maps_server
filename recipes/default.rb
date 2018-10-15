@@ -493,5 +493,10 @@ execute "enable tileserver apache site" do
   notifies :reload, 'service[apache2]', :immediate
 end
 
+# A second reload of Apache is needed, for some unknown reason.
+service "apache2" do
+  action :reload
+end
+
 # TODO: Deploy a static website with [Leaflet][] for browsing the raster tiles
 # TODO: Deploy a static website with [OpenLayers][] for browsing the raster tiles

@@ -1,6 +1,9 @@
 <VirtualHost *:80>
-    ServerName tile.openstreetmap.org
-    ServerAlias a.tile.openstreetmap.org b.tile.openstreetmap.org c.tile.openstreetmap.org d.tile.openstreetmap.org
+    ServerName localhost
+    # Alternate subdomains for the tile server.
+    # Web clients usually use these for avoiding per-domain connection
+    # limits, and thus can load more tiles at the same time.
+    # ServerAlias a.tiles.example.com
 
     # Specify the default base storage path for where tiles live. A 
     # number of different storage backends are available, that can be 
