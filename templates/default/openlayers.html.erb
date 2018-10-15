@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OpenLayers Map</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.css" integrity="sha256-rQq4Fxpq3LlPQ8yP11i6Z2lAo82b6ACDgd35CKyNEBw=" crossorigin="anonymous" />
+  <style>
+  #map {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+  </style>
+</head>
+<body onload="init()">
+<div id="map"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.js" integrity="sha256-77IKwU93jwIX7zmgEBfYGHcmeO0Fx2MoWB/ooh9QkBA=" crossorigin="anonymous"></script>
+<script>
+function init() {
+  let map = new ol.Map({
+    layers: [
+      new ol.layer.Tile({
+        source: new ol.source.OSM({
+          url: '/osm/{z}/{x}/{y}.png'
+        })
+      })
+    ],
+    target: 'map',
+    view: new ol.View({
+      center: ol.proj.fromLonLat([<%= @longitude %>, <%= @latitude %>]),
+      zoom: 12
+    })
+  });
+}
+</script>
+</body>
+</html>

@@ -513,4 +513,9 @@ template '/var/www/html/leaflet.html' do
             longitude: node['maps_server']['viewers']['longitude'])
 end
 
-# TODO: Deploy a static website with OpenLayers for browsing the raster tiles
+# Deploy a static website with OpenLayers for browsing the raster tiles
+template '/var/www/html/openlayers.html' do
+  source 'openlayers.html.erb'
+  variables(latitude: node['maps_server']['viewers']['latitude'], 
+            longitude: node['maps_server']['viewers']['longitude'])
+end
