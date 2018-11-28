@@ -21,7 +21,9 @@ apt_update 'update' do
   action :update
 end
 
-package %w(postgresql-10 postgresql-client-10 postgresql-contrib libpq-dev)
+package %w(postgresql-10 postgresql-client-10 postgresql-server-dev-10) do
+  version ['10.6-1.pgdg18.04+1', '10.6-1.pgdg18.04+1', '10.6-1.pgdg18.04+1']
+end
 
 service 'postgresql' do
   action :nothing
@@ -263,3 +265,4 @@ template '/etc/postgresql/10/main/postgresql.conf' do
   variables rendering_conf
   notifies :reload, 'service[postgresql]', :immediate
 end
+

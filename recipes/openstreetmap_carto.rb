@@ -273,3 +273,4 @@ template '/var/www/html/openlayers.html' do
   variables(latitude: node['maps_server']['viewers']['latitude'], 
             longitude: node['maps_server']['viewers']['longitude'])
 end
+
