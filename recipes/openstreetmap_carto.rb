@@ -56,7 +56,7 @@ def install_zip(file, install_directory, check_file)
     cwd ::File.dirname(file)
     code <<-EOH
     mkdir -p #{basename} &&
-    unzip -j -d #{basename} #{file} &&
+    unzip -j -o -d #{basename} #{file} &&
     cp -r #{basename} #{install_directory}/.
     EOH
     not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
