@@ -107,6 +107,11 @@ TODO: Set up some kind of monitoring for viewing hardware usage and tile activit
 
 [Munin]: http://munin-monitoring.org
 
+## `arcticwebmap` Recipe
+
+TODO: Set up a stylesheet for the ArcticWebMap style and data files.
+
 ## License
 
 Apache 2.0
+
