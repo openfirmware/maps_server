@@ -103,7 +103,7 @@ TODO: Try using [TileStrata][] as an alternative to mod\_tile for generating ras
 
 ## `monitoring` Recipe
 
-TODO: Set up some kind of monitoring for viewing hardware usage and tile activity. The OSMF uses [Munin][] for these.
+Installs [munin][] and munin-node, accessible under `/munin`. Will add munin plugins for PostgreSQL as well as the age of the planet extract file.
 
 [Munin]: http://munin-monitoring.org
 

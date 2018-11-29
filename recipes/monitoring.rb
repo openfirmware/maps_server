@@ -88,3 +88,23 @@ link "/etc/munin/plugins/planet_age" do
   to "#{plugins_dir}/planet_age"
 end
 
+mod_tile_plugins = %w(mod_tile_fresh mod_tile_response renderd_processed renderd_queue_time renderd_zoom_time mod_tile_latency mod_tile_zoom renderd_queue renderd_zoom replication_delay)
+
+mod_tile_plugins.each do |plugin|
+  link "/etc/munin/plugins/#{plugin}" do
+    to "/opt/mod_tile/munin/#{plugin}"
+  end
+end
+
+service 'munin-node' do
+  action :restart
+end
+
+service 'rrdcached' do
+  action :restart
+end
+
+service 'apache2' do
+  action :restart
+end
+
