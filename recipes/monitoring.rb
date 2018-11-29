@@ -27,6 +27,11 @@ directory "/var/lib/munin/rrdcached" do
   mode 0o755
 end
 
+service "rrdcached" do
+  action [:enable, :start]
+  subscribes :restart, "template[/etc/default/rrdcached]"
+end
+
 expiry_time = 14 * 86400
 
 template "/etc/munin/munin.conf" do
@@ -57,4 +62,12 @@ end
 
 # Install Munin Client
 package 'munin-node'
+package 'ruby'
+package 'libdbd-pg-perl'
 
+# Install plugins to /usr/local/share/munin/plugins/
+# Enable plugins by creating links in /etc/munin/plugins/
+
+execute 'enable default munin node plugins' do
+  command 'munin-node-configure --suggest --shell | sh'
+end
