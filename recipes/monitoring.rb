@@ -66,8 +66,25 @@ package 'ruby'
 package 'libdbd-pg-perl'
 
 # Install plugins to /usr/local/share/munin/plugins/
+plugins_dir = "/usr/local/share/munin/plugins"
+
+directory plugins_dir do
+  recursive true
+  action :create
+end
+
+cookbook_file "#{plugins_dir}/planet_age" do
+  source 'munin-plugins/planet_age'
+  mode '0755'
+end
+
 # Enable plugins by creating links in /etc/munin/plugins/
 
 execute 'enable default munin node plugins' do
   command 'munin-node-configure --suggest --shell | sh'
 end
+
+link "/etc/munin/plugins/planet_age" do
+  to "#{plugins_dir}/planet_age"
+end
+
