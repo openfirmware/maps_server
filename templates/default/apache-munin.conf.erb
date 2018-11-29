@@ -1,0 +1,32 @@
+# DO NOT EDIT - This file is being maintained by Chef
+
+<VirtualHost *:80>
+  ServerName munin
+
+  CustomLog /var/log/apache2/munin-access.log combined
+  ErrorLog /var/log/apache2/munin-error.log
+
+  SetEnv RRDCACHED_ADDRESS /var/run/rrdcached.sock
+
+  DocumentRoot /var/www
+  Alias /munin/static /etc/munin/static
+  <Directory /etc/munin/static>
+      Require all granted
+      Options +FollowSymLinks +SymLinksIfOwnerMatch
+  </Directory>
+
+  # ScriptAlias /munin-cgi/munin-cgi-graph /usr/lib/munin/cgi/munin-cgi-graph
+  ScriptAlias /munin /usr/lib/munin/cgi/munin-cgi-html
+  ScriptAlias /munin-cgi/ /usr/lib/munin/cgi/
+  <Directory /usr/lib/munin/cgi/>
+      Options +FollowSymLinks +SymLinksIfOwnerMatch
+      Require all granted
+      <IfModule mod_fcgid.c>
+          SetHandler fcgid-script
+      </IfModule>
+      <IfModule !mod_fcgid.c>
+          SetHandler cgi-script
+      </IfModule>
+  </Directory>
+</VirtualHost>
+

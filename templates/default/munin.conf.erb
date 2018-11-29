@@ -1,0 +1,28 @@
+# DO NOT EDIT - This file is being maintained by Chef
+
+dbdir /var/lib/munin
+htmldir /var/cache/munin/www
+logdir /var/log/munin
+rundir  /var/run/munin
+tmpldir /etc/munin/templates
+
+# Set maximum number of update processes to run at once
+max_processes 64
+
+# Maximum number of graphs to generate at once
+max_graph_jobs 24
+max_cgi_graph_jobs 24
+
+html_strategy cgi
+graph_strategy cgi
+
+# Use rrdcached
+rrdcached_socket /var/run/rrdcached.sock
+
+# Ignore uncontactable hosts for twelve hours
+unknown_limit 144
+
+[localhost]
+  address 127.0.0.1
+  use_node_name yes
+
