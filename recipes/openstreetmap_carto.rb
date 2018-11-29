@@ -274,3 +274,7 @@ template '/var/www/html/openlayers.html' do
             longitude: node['maps_server']['viewers']['longitude'])
 end
 
+service 'renderd' do
+  action :restart
+end
+
