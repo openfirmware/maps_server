@@ -138,16 +138,20 @@ script "install noto-emoji" do
 end
 
 # Set up additional PostgreSQL indexes for the stylesheet
+osm_carto_indexes_file = "#{node['maps_server']['data_prefix']}/extract/openstreetmap-carto-indexes"
 script 'add indexes for openstreetmap-carto' do
   code <<-EOH
     sudo -u #{node['maps_server']['render_user']} psql -d osm -f "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/indexes.sql" && \
-    date > #{node['maps_server']['data_prefix']}/extract/openstreetmap-carto-indexes
+    date > #{osm_carto_indexes_file}
   EOH
   cwd node['maps_server']['stylesheets_prefix']
   interpreter 'bash'
   user 'root'
   timeout 3600
-  not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/openstreetmap-carto-indexes") }
+  not_if { 
+    ::File.exists?(osm_carto_indexes_file) &&
+    ::File.mtime(osm_carto_indexes_file) >= DateTime.strptime(node['maps_server']['extract_date_requirement']).to_time
+  }
 end
 
 # Set up raster tile rendering for the stylesheet

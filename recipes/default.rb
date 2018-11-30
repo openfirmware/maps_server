@@ -3,6 +3,7 @@
 # Recipe:: default
 #
 # Copyright:: 2018, James Badger, Apache-2.0 License.
+require 'date'
 
 # Set locale
 locale node['maps_server']['locale']
@@ -137,14 +138,24 @@ end
 extract_file = "#{extract_path}/#{::File.basename(extract_url)}"
 remote_file extract_file do
   source extract_url
-  action :create_if_missing
+  only_if {
+    edate = node['maps_server']['extract_date_requirement']
+    !::File.exists?(extract_file) ||
+    !edate.nil? && !edate.empty? && ::File.mtime(extract_file) < DateTime.strptime(edate).to_time
+  }
+  action :create
 end
 
 if !(extract_checksum_url.nil? || extract_checksum_url.empty?)
   extract_checksum_file = "#{extract_path}/#{::File.basename(extract_checksum_url)}"
   remote_file extract_checksum_file do
     source extract_checksum_url
-    action :create_if_missing
+    only_if {
+      edate = node['maps_server']['extract_date_requirement']
+      !::File.exists?(extract_checksum_file) ||
+      !edate.nil? && !edate.empty? && ::File.mtime(extract_checksum_file) < DateTime.strptime(edate).to_time
+    }
+    action :create
   end
 
   execute 'validate extract' do
@@ -229,7 +240,7 @@ if !extract_bounding_box.nil? && !extract_bounding_box.empty?
 end
 
 # Load data into database
-# TODO: Support forced reload of data to refresh database
+last_import_file = "#{node['maps_server']['data_prefix']}/extract/last-import"
 execute "import extract" do
   command <<-EOH
     sudo -u #{node['maps_server']['render_user']} osm2pgsql \
@@ -241,25 +252,42 @@ execute "import extract" do
               --style #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.style \
               --number-processes 4 \
               --hstore -E 4326 -G #{extract_file} &&
-    date > #{node['maps_server']['data_prefix']}/extract/last-import
+    date > #{last_import_file}
   EOH
   cwd node['maps_server']['data_prefix']
   live_stream true
   user 'root'
   timeout 3600
-  not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/last-import") }
+  not_if { 
+    ::File.exists?(last_import_file) &&
+    ::File.mtime(last_import_file) >= DateTime.strptime(node['maps_server']['extract_date_requirement']).to_time
+  }
 end
 
+# Clean up the database by running a PostgreSQL VACUUM and ANALYZE.
+# These improve performance and disk space usage, and therefore queries 
+# for generating tiles.
+# This should not take very long for small extracts (city/province
+# level). Continent/planet level databases will probably have to
+# increase the timeout.
+# A timestamp file is created after the run, and used to determine if
+# the resource should be re-run. If the timestamp file is older than
+# the node['maps_server']['extract_date_requirement'] date, then the
+# resource will be re-run.
+post_import_vacuum_file = "#{node['maps_server']['data_prefix']}/extract/post-import-vacuum"
 script 'clean up database after import' do
   code <<-EOH
     sudo -u #{node['maps_server']['render_user']} psql -d osm -c "VACUUM FULL VERBOSE ANALYZE;" &&
-    date > #{node['maps_server']['data_prefix']}/extract/post-import-vacuum
+    date > #{post_import_vacuum_file}
   EOH
   cwd node['maps_server']['data_prefix']
   interpreter 'bash'
   user 'root'
   timeout 3600
-  not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/post-import-vacuum") }
+  not_if { 
+    ::File.exists?(post_import_vacuum_file) &&
+    ::File.mtime(post_import_vacuum_file) >= DateTime.strptime(node['maps_server']['extract_date_requirement']).to_time
+  }
 end
 
 # Optimize PostgreSQL for tile serving

@@ -16,6 +16,14 @@ default['maps_server']['stylesheets_prefix'] = '/srv/stylesheets'
 #################
 ## Extract Source
 #################
+# If extract date is set and any existing extract is older, then
+# A) a new extract will be downloaded
+# B) the local OSM database will be reloaded
+# C) The database will be re-vacuumed after import
+# D) stylesheet-specific indexes will be created again
+# Date should be ISO8601 with a timezone. Leave as nil or empty string
+# to ignore.
+default['maps_server']['extract_date_requirement'] = "2018-11-30T11:00:00+01:00"
 # Use PBF files only
 default['maps_server']['extract_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf'
 default['maps_server']['extract_checksum_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf.md5'
