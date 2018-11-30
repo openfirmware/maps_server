@@ -1,7 +1,11 @@
+#########
 ## Locale
+#########
 default['maps_server']['locale'] = 'en_CA'
 
+##################################
 ## Installation Directory Prefixes
+##################################
 # For software packages
 default['maps_server']['software_prefix'] = '/opt'
 # For map source data downloads
@@ -9,20 +13,28 @@ default['maps_server']['data_prefix'] = '/srv/data'
 # For map stylesheets
 default['maps_server']['stylesheets_prefix'] = '/srv/stylesheets'
 
+#################
 ## Extract Source
+#################
 # Use PBF files only
 default['maps_server']['extract_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf'
 default['maps_server']['extract_checksum_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf.md5'
 
+#################
 ## Rendering User
+#################
 default['maps_server']['render_user'] = 'render'
 
+###################################
 ## Default Location for Web Clients
+###################################
 # This location is Calgary, Canada
 default['maps_server']['viewers']['latitude'] = 51.0452
 default['maps_server']['viewers']['longitude'] = -114.0625
 
+####################################
 ## PostgreSQL Original Configuration
+####################################
 #
 # Adding more options will require editing 
 # templates/default/postgresql.conf.erb
@@ -83,7 +95,9 @@ default['postgresql']['conf']['default_text_search_config'] = 'pg_catalog.englis
 
 default['postgresql']['conf']['include_dir'] = 'conf.d'
 
+##################################
 ## PostgreSQL Import Configuration
+##################################
 #
 # Do not set too high: https://github.com/openstreetmap/osm2pgsql/issues/163
 # But up to 32GB should be fine: http://thebuild.com/blog/2017/06/09/shared_buffers-is-not-a-sensitive-setting/
@@ -124,7 +138,9 @@ default['postgresql']['import-conf']['default_statistics_target'] = 500
 # Do not autovacuum during imports, it can be done afterwards
 default['postgresql']['import-conf']['autovacuum'] = 'off'
 
+#######################################
 ## PostgreSQL Tile Server Configuration
+#######################################
 # 
 # More connections are needed when pre-rendering many tiles simultaneously
 default['postgresql']['tile-conf']['max_connections'] = 300
@@ -166,3 +182,4 @@ default['postgresql']['tile-conf']['effective_cache_size'] = '6GB'
 default['postgresql']['tile-conf']['default_statistics_target'] = 500
 
 default['postgresql']['tile-conf']['autovacuum'] = 'on'
+
