@@ -19,6 +19,13 @@ default['maps_server']['stylesheets_prefix'] = '/srv/stylesheets'
 # Use PBF files only
 default['maps_server']['extract_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf'
 default['maps_server']['extract_checksum_url'] = 'http://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf.md5'
+# Crop the extract to a given bounding box
+# Use a blank array or nil for no crop
+# Order is the same as used by osm2pgsql:
+# min longitude, min latitude, max longitude,
+# max latitude
+# default['maps_server']['crop_bounding_box'] = []
+default['maps_server']['crop_bounding_box'] = [-115, 50, -113, 52]
 
 #################
 ## Rendering User

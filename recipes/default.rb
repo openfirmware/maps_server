@@ -221,7 +221,12 @@ user node['maps_server']['render_user'] do
   shell '/bin/false'
 end
 
-# TODO: Crop extract to smaller region
+# Crop extract to smaller region
+extract_argument = ''
+extract_bounding_box = node['maps_server']['crop_bounding_box']
+if !extract_bounding_box.nil? && !extract_bounding_box.empty?
+  extract_argument = "--bbox " + extract_bounding_box.join(",")
+end
 
 # Load data into database
 # TODO: Support forced reload of data to refresh database
@@ -231,6 +236,7 @@ execute "import extract" do
               --host /var/run/postgresql --create --slim --drop \
               --username #{node['maps_server']['render_user']} \
               --database osm -C 2500 \
+              #{extract_argument} \
               --tag-transform-script #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.lua \
               --style #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.style \
               --number-processes 4 \
