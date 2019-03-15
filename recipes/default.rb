@@ -123,9 +123,7 @@ execute 'mod_tile: ldconfig' do
   command 'ldconfig'
 end
 
-# Download Extract
-extract_url = node['maps_server']['extract_url']
-extract_checksum_url = node['maps_server']['extract_checksum_url']
+# Download Extracts
 
 extract_path = "#{node['maps_server']['data_prefix']}/extract"
 directory extract_path do
@@ -133,35 +131,51 @@ directory extract_path do
   action :create
 end
 
-extract_file = "#{extract_path}/#{::File.basename(extract_url)}"
-remote_file extract_file do
-  source extract_url
-  only_if {
-    edate = node['maps_server']['extract_date_requirement']
-    !::File.exists?(extract_file) ||
-    !edate.nil? && !edate.empty? && ::File.mtime(extract_file) < DateTime.strptime(edate).to_time
-  }
-  action :create
-end
+# Collect the downloaded extracts file paths
+extract_file_list = []
 
-if !(extract_checksum_url.nil? || extract_checksum_url.empty?)
-  extract_checksum_file = "#{extract_path}/#{::File.basename(extract_checksum_url)}"
-  remote_file extract_checksum_file do
-    source extract_checksum_url
+node['maps_server']['extracts'].each do |extract|
+  extract_url          = extract['extract_url']
+  extract_checksum_url = extract['extract_checksum_url']
+  extract_file         = "#{extract_path}/#{::File.basename(extract_url)}"
+  extract_file_list.push(extract_file)
+
+  # Download the extract
+  # Only runs if a) a downloaded file doesn't exist, 
+  # b) a date requirement for the extract hasn't been set,
+  # c) The remote file is newer than the extract date requirement
+  remote_file extract_file do
+    source extract_url
     only_if {
-      edate = node['maps_server']['extract_date_requirement']
-      !::File.exists?(extract_checksum_file) ||
-      !edate.nil? && !edate.empty? && ::File.mtime(extract_checksum_file) < DateTime.strptime(edate).to_time
+      edate = extract['extract_date_requirement']
+      !::File.exists?(extract_file) ||
+      !edate.nil? && !edate.empty? && ::File.mtime(extract_file) < DateTime.strptime(edate).to_time
     }
     action :create
   end
 
-  execute 'validate extract' do
-    command "md5sum --check #{extract_checksum_file}"
-    cwd ::File.dirname(extract_checksum_file)
-    user 'root'
+  # If there is a checksum URL, download it and validate the extract
+  # against the checksum provided by the source. Assumes md5.
+  if !(extract_checksum_url.nil? || extract_checksum_url.empty?)
+    extract_checksum_file = "#{extract_path}/#{::File.basename(extract_checksum_url)}"
+    remote_file extract_checksum_file do
+      source extract_checksum_url
+      only_if {
+        edate = extract['extract_date_requirement']
+        !::File.exists?(extract_checksum_file) ||
+        !edate.nil? && !edate.empty? && ::File.mtime(extract_checksum_file) < DateTime.strptime(edate).to_time
+      }
+      action :create
+    end
+
+    execute 'validate extract' do
+      command "md5sum --check #{extract_checksum_file}"
+      cwd ::File.dirname(extract_checksum_file)
+      user 'root'
+    end
   end
 end
+
 
 # Create stylesheets directory
 directory node['maps_server']['stylesheets_prefix'] do
@@ -230,6 +244,19 @@ user node['maps_server']['render_user'] do
   shell '/bin/false'
 end
 
+# Join extracts into one large extract file
+package 'osmosis'
+
+osmosis_args = extract_file_list.collect { |f| "--read-pbf-fast #{f}" }.join(" ")
+osmosis_args += " " + (["--merge"] * (extract_file_list.length - 1)).join(" ")
+merged_extract = "#{extract_path}/merged.pbf"
+
+execute 'combine extracts' do
+  command "osmosis #{osmosis_args} --write-pbf \"#{merged_extract}\""
+  timeout 3600
+  not_if { ::File.exist?(merged_extract) }
+end
+
 # Crop extract to smaller region
 extract_argument = ''
 extract_bounding_box = node['maps_server']['crop_bounding_box']
@@ -249,7 +276,7 @@ execute "import extract" do
               --tag-transform-script #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.lua \
               --style #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.style \
               --number-processes 4 \
-              --hstore -E 4326 -G #{extract_file} &&
+              --hstore -E 4326 -G #{merged_extract} &&
     date > #{last_import_file}
   EOH
   cwd node['maps_server']['data_prefix']
@@ -257,8 +284,7 @@ execute "import extract" do
   user 'root'
   timeout 3600
   not_if { 
-    ::File.exists?(last_import_file) &&
-    ::File.mtime(last_import_file) >= DateTime.strptime(node['maps_server']['extract_date_requirement']).to_time
+    ::File.exists?(last_import_file)
   }
 end
 
@@ -269,9 +295,7 @@ end
 # level). Continent/planet level databases will probably have to
 # increase the timeout.
 # A timestamp file is created after the run, and used to determine if
-# the resource should be re-run. If the timestamp file is older than
-# the node['maps_server']['extract_date_requirement'] date, then the
-# resource will be re-run.
+# the resource should be re-run.
 post_import_vacuum_file = "#{node['maps_server']['data_prefix']}/extract/post-import-vacuum"
 script 'clean up database after import' do
   code <<-EOH
@@ -283,8 +307,7 @@ script 'clean up database after import' do
   user 'root'
   timeout 3600
   not_if { 
-    ::File.exists?(post_import_vacuum_file) &&
-    ::File.mtime(post_import_vacuum_file) >= DateTime.strptime(node['maps_server']['extract_date_requirement']).to_time
+    ::File.exists?(post_import_vacuum_file)
   }
 end
 
@@ -292,7 +315,7 @@ end
 rendering_conf = {}.merge(node['postgresql']['conf'])
                    .merge(node['postgresql']['tile-conf'])
 
-template '/etc/postgresql/10/main/postgresql.conf' do
+template '/etc/postgresql/11/main/postgresql.conf' do
   source 'postgresql.conf.erb'
   variables rendering_conf
   notifies :reload, 'service[postgresql]', :immediate
