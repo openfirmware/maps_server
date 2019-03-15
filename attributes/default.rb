@@ -53,10 +53,10 @@ default['maps_server']['viewers']['longitude'] = -114.0625
 #
 # Adding more options will require editing 
 # templates/default/postgresql.conf.erb
-default['postgresql']['conf']['data_directory'] = '/var/lib/postgresql/10/main'
-default['postgresql']['conf']['hba_file'] = '/etc/postgresql/10/main/pg_hba.conf'
-default['postgresql']['conf']['ident_file'] = '/etc/postgresql/10/main/pg_ident.conf'
-default['postgresql']['conf']['external_pid_file'] = '/var/run/postgresql/10-main.pid'
+default['postgresql']['conf']['data_directory'] = '/var/lib/postgresql/11/main'
+default['postgresql']['conf']['hba_file'] = '/etc/postgresql/11/main/pg_hba.conf'
+default['postgresql']['conf']['ident_file'] = '/etc/postgresql/11/main/pg_ident.conf'
+default['postgresql']['conf']['external_pid_file'] = '/var/run/postgresql/11-main.pid'
 
 default['postgresql']['conf']['listen_addresses'] = 'localhost'
 default['postgresql']['conf']['port'] = 5432
@@ -94,9 +94,9 @@ default['postgresql']['conf']['default_statistics_target'] = 100
 
 default['postgresql']['conf']['log_line_prefix'] = '%m [%p] %q%u@%d '
 default['postgresql']['conf']['log_timezone'] = 'UTC'
-default['postgresql']['conf']['cluster_name'] = '10/main'
+default['postgresql']['conf']['cluster_name'] = '11/main'
 
-default['postgresql']['conf']['stats_temp_directory'] = '/var/run/postgresql/10-main.pg_stat_tmp'
+default['postgresql']['conf']['stats_temp_directory'] = '/var/run/postgresql/11-main.pg_stat_tmp'
 
 default['postgresql']['conf']['autovacuum'] = 'on'
 
@@ -122,11 +122,11 @@ default['postgresql']['import-conf']['temp_buffers'] = '64MB'
 default['postgresql']['import-conf']['work_mem'] = '64MB'
 
 # Can be high because it only runs during a single session vacuum:
-# https://www.postgresql.org/docs/10.5/static/runtime-config-resource.html
+# https://www.postgresql.org/docs/11/static/runtime-config-resource.html
 default['postgresql']['import-conf']['maintenance_work_mem'] = '2GB'
 default['postgresql']['import-conf']['autovacuum_work_mem'] = '4GB'
 
-# See https://www.postgresql.org/docs/9.6/static/runtime-config-resource.html
+# See https://www.postgresql.org/docs/11/static/runtime-config-resource.html
 # Use 0 if you have spinning hard disks and not SSDs.
 # Use the same Queue Depth as your storage device.
 default['postgresql']['import-conf']['effective_io_concurrency'] = 32
@@ -168,11 +168,11 @@ default['postgresql']['tile-conf']['temp_buffers'] = '64MB'
 default['postgresql']['tile-conf']['work_mem'] = '64MB'
 
 # Can be high because it only runs during a single session vacuum:
-# https://www.postgresql.org/docs/10.5/static/runtime-config-resource.html
+# https://www.postgresql.org/docs/11/static/runtime-config-resource.html
 default['postgresql']['tile-conf']['maintenance_work_mem'] = '2GB'
 default['postgresql']['tile-conf']['autovacuum_work_mem'] = -1
 
-# See https://www.postgresql.org/docs/9.6/static/runtime-config-resource.html
+# See https://www.postgresql.org/docs/11/static/runtime-config-resource.html
 # Use 0 if you have spinning hard disks and not SSDs.
 # Use the same Queue Depth as your storage device.
 default['postgresql']['tile-conf']['effective_io_concurrency'] = 32

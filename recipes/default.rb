@@ -22,9 +22,7 @@ apt_update 'update' do
   action :update
 end
 
-package %w(postgresql-10 postgresql-client-10 postgresql-server-dev-10) do
-  version ['10.6-1.pgdg18.04+1', '10.6-1.pgdg18.04+1', '10.6-1.pgdg18.04+1']
-end
+package %w(postgresql-11 postgresql-client-11 postgresql-server-dev-11)
 
 service 'postgresql' do
   action :nothing
@@ -34,7 +32,7 @@ end
 package %w(gdal-bin gdal-data libgdal-dev libgdal20)
 
 # Install PostGIS
-package %w(postgresql-10-postgis-2.5 postgresql-10-postgis-2.5-scripts)
+package %w(postgresql-11-postgis-2.5 postgresql-11-postgis-2.5-scripts)
 
 # Install osm2pgsql
 package 'osm2pgsql'
@@ -184,7 +182,7 @@ end
 import_conf = {}.merge(node['postgresql']['conf'])
                 .merge(node['postgresql']['import-conf'])
 
-template '/etc/postgresql/10/main/postgresql.conf' do
+template '/etc/postgresql/11/main/postgresql.conf' do
   source 'postgresql.conf.erb'
   variables import_conf
   not_if { ::File.exists?("#{node['maps_server']['data_prefix']}/extract/last-import") }

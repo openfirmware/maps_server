@@ -48,7 +48,7 @@ All of the attributes in `attributes/default.rb` have been documented with defau
 
 Including the default recipe, `maps_server` or `maps_server::default`, will set up the database, web server, data extract, and import the data to PostgreSQL. It does not set up Apache/mod\_tile for serving raster tiles, see the `openstreetmap_carto` for that.
 
-* Install [PostgreSQL][] 10.5
+* Install [PostgreSQL][] 11
 * Install [GDAL][]
 * Install [PostGIS][] 2.5.0
 * Install [osm2pgsql][]
