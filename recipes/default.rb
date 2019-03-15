@@ -8,6 +8,31 @@ require 'date'
 # Set locale
 locale node['maps_server']['locale']
 
+# Use noop IO scheduler
+bash "Set noop scheduler" do
+  code "echo noop > /sys/block/sd*/queue/scheduler"
+end
+
+execute "update grub" do
+  command "update-grub2"
+  action :nothing
+end
+
+ruby_block "enable noop scheduler for grub" do
+  grub_configfile = '/etc/default/grub'
+  target_regex = /^GRUB_CMDLINE_LINUX="net\.ifnames=0 biosdevname=0 "$/
+  block do
+    sed = Chef::Util::FileEdit.new(grub_configfile)
+    sed.search_file_replace(
+      target_regex, 
+      'GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 elevator=noop"'
+    )
+    sed.write_file
+  end
+  only_if { ::File.readlines(grub_configfile).grep(target_regex).any? }
+  notifies :run, 'execute[update grub]'
+end
+
 # Install PostgreSQL
 # Use the PostgreSQL Apt repository for latest versions.
 apt_repository 'postgresql' do
