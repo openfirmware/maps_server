@@ -111,6 +111,33 @@ Installs [munin][] and munin-node, accessible under `/munin`. Will add munin plu
 
 TODO: Set up a stylesheet for the ArcticWebMap style and data files.
 
+## Test Kitchen Optimizations
+
+Test Kitchen is a tool for setting up a local virtual machine that you can deploy this cookbook for testing. TK supports multiple "drivers", but the main ones are Vagrant with VirtualBox. Here are a few optimizations that should be used in `.kitchen.yml` depending on your development hardware/OS.
+
+#### Customize VM Options
+
+Adjust these based on your available hardware. These values are based on [VirtualBox](https://www.vagrantup.com/docs/virtualbox/configuration.html).
+
+```yaml
+driver:
+  name: vagrant
+  customize:
+    cpus: 4
+    memory: 8192
+```
+
+#### Set a Synced Cache Directory
+
+Stores extracts and shapefiles on the HOST machine so they don't have to be re-downloaded. First example below is for MacOS, second is for Linux.
+
+```yaml
+driver:
+  synced_folders:
+    - ["/Users/YOU/Library/Caches/vagrant/%{instance_name}", "/srv/data", "create: true"]
+    - ["/home/YOU/data/vagrant/%{instance_name}", "/srv/data", "create: true"]
+```
+
 ## License
 
 Apache 2.0
