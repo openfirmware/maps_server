@@ -149,8 +149,7 @@ script 'add indexes for openstreetmap-carto' do
   user 'root'
   timeout 3600
   not_if { 
-    ::File.exists?(osm_carto_indexes_file) &&
-    ::File.mtime(osm_carto_indexes_file) >= DateTime.strptime(node['maps_server']['extract_date_requirement']).to_time
+    ::File.exists?(osm_carto_indexes_file)
   }
 end
 
