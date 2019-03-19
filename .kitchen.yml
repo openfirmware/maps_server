@@ -3,6 +3,8 @@ driver:
   name: vagrant
   network:
     - ["private_network", { ip: 192.168.33.10 }]
+  vagrantfiles:
+    - Vagrant_fixed_disks.rb
   customize:
     cpus: 6
     memory: 24576

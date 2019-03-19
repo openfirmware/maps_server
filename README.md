@@ -115,6 +115,8 @@ TODO: Set up a stylesheet for the ArcticWebMap style and data files.
 
 Test Kitchen is a tool for setting up a local virtual machine that you can deploy this cookbook for testing. TK supports multiple "drivers", but the main ones are Vagrant with VirtualBox. Here are a few optimizations that should be used in `.kitchen.yml` depending on your development hardware/OS.
 
+**Important Note**: The VM will require 70 GB of free space on the host machine, due to the use of fixed allocation disks (see below for why).
+
 #### Customize VM Options
 
 Adjust these based on your available hardware. These values are based on [VirtualBox][VirtualBox Config].
@@ -148,6 +150,14 @@ driver:
 These use the [RSync synced folders][RSync Synced Folders] instead of VirtualBox/NFS/SMB as the latter have a performance penalty which will slow down imports of PBF extracts. As the RSync method has to copy the files into the VM, it will be a bit slower to create the VM using `kitchen create`.
 
 [RSync Synced Folders]: https://www.vagrantup.com/docs/synced-folders/rsync.html
+
+#### Use Fixed VirtualBox Disk Images
+
+I have included a custom Vagrantfile (`Vagrant_fixed_disks.rb`) that will use the [Vagrant Disksize plugin][] to resize the base box image to 64 GB **and** use fixed allocation, courtesy of a monkey patch.
+
+Fixed allocation disks offer a 2-3 times improvement in sequential write speeds, which is pretty important for a database driven cookbook like this one.
+
+[Vagrant Disksize plugin]: https://github.com/sprotheroe/vagrant-disksize
 
 ## License
 
