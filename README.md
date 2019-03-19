@@ -149,7 +149,10 @@ driver:
 
 These use the [RSync synced folders][RSync Synced Folders] instead of VirtualBox/NFS/SMB as the latter have a performance penalty which will slow down imports of PBF extracts. As the RSync method has to copy the files into the VM, it will be a bit slower to create the VM using `kitchen create`.
 
+To sync updated shared folders back to the cache directory on the host, use the [vagrant-rsync-back][] plugin. Note that syncing to and from the VM uses the rsync `--delete` argument, so the destination will be cleaned to match the source.
+
 [RSync Synced Folders]: https://www.vagrantup.com/docs/synced-folders/rsync.html
+[vagrant-rsync-back]:https://github.com/smerrill/vagrant-rsync-back
 
 #### Use Fixed VirtualBox Disk Images
 
