@@ -267,14 +267,16 @@ end
 template '/var/www/html/leaflet.html' do
   source 'leaflet.html.erb'
   variables(latitude: node['maps_server']['viewers']['latitude'], 
-            longitude: node['maps_server']['viewers']['longitude'])
+            longitude: node['maps_server']['viewers']['longitude'],
+            zoom: node['maps_server']['viewers']['zoom'])
 end
 
 # Deploy a static website with OpenLayers for browsing the raster tiles
 template '/var/www/html/openlayers.html' do
   source 'openlayers.html.erb'
   variables(latitude: node['maps_server']['viewers']['latitude'], 
-            longitude: node['maps_server']['viewers']['longitude'])
+            longitude: node['maps_server']['viewers']['longitude'],
+            zoom: node['maps_server']['viewers']['zoom'])
 end
 
 service 'renderd' do

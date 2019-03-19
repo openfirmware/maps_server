@@ -52,6 +52,7 @@ default['maps_server']['render_user'] = 'render'
 # This location is Calgary, Canada
 default['maps_server']['viewers']['latitude'] = 51.0452
 default['maps_server']['viewers']['longitude'] = -114.0625
+default['maps_server']['viewers']['zoom'] = 4
 
 ####################################
 ## PostgreSQL Original Configuration
