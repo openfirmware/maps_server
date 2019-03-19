@@ -117,7 +117,7 @@ Test Kitchen is a tool for setting up a local virtual machine that you can deplo
 
 #### Customize VM Options
 
-Adjust these based on your available hardware. These values are based on [VirtualBox](https://www.vagrantup.com/docs/virtualbox/configuration.html).
+Adjust these based on your available hardware. These values are based on [VirtualBox][VirtualBox Config].
 
 ```yaml
 driver:
@@ -125,7 +125,14 @@ driver:
   customize:
     cpus: 4
     memory: 8192
+    storagectl:
+      - name: "SATA Controller"
+        hostiocache: "off"
 ```
+
+Disabling the Host I/O cache in VirtualBox noticeably increases disk sequential and random read/write speeds.
+
+[VirtualBox Config]: https://www.vagrantup.com/docs/virtualbox/configuration.html
 
 #### Set a Synced Cache Directory
 
@@ -134,9 +141,13 @@ Stores extracts and shapefiles on the HOST machine so they don't have to be re-d
 ```yaml
 driver:
   synced_folders:
-    - ["/Users/YOU/Library/Caches/vagrant/%{instance_name}", "/srv/data", "create: true"]
-    - ["/home/YOU/data/vagrant/%{instance_name}", "/srv/data", "create: true"]
+    - ["/Users/YOU/Library/Caches/vagrant/%{instance_name}", "/srv/data", "create: true, type: :rsync"]
+    - ["/home/YOU/data/vagrant/%{instance_name}", "/srv/data", "create: true, type: :rsync"]
 ```
+
+These use the [RSync synced folders][RSync Synced Folders] instead of VirtualBox/NFS/SMB as the latter have a performance penalty which will slow down imports of PBF extracts. As the RSync method has to copy the files into the VM, it will be a bit slower to create the VM using `kitchen create`.
+
+[RSync Synced Folders]: https://www.vagrantup.com/docs/synced-folders/rsync.html
 
 ## License
 

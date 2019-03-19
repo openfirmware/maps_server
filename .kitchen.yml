@@ -4,8 +4,13 @@ driver:
   network:
     - ["private_network", { ip: 192.168.33.10 }]
   customize:
-    memory: 8192
-    cpus: 4
+    cpus: 6
+    memory: 24576
+    storagectl:
+      - name: "SATA Controller"
+        hostiocache: "off"
+  synced_folders:
+    - ["/Users/jpbadger/Library/Caches/vagrant/%{instance_name}", "/srv/data", "create: true, type: :rsync"]
 
 provisioner:
   name: chef_zero
