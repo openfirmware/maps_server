@@ -87,6 +87,16 @@ Installs the openstreetmap-carto stylesheet, then sets up renderd and Apache. Al
 [OpenLayers]: http://openlayers.org
 [openstreetmap-carto]: https://github.com/gravitystorm/openstreetmap-carto
 
+## `base_monitoring` Recipe
+
+Installs the munin/rrdtool/Apache 2 monitoring stack. This recipe is meant to be runnable *before* the `default` recipe, so that you can collect statistics during the import.
+
+For PostgreSQL and `mod_tile` monitoring plugins, use the `monitoring` recipe.
+
+## `monitoring` Recipe
+
+Runs the `base_monitoring` recipe, then installs custom Munin plugins to collect statistics from PostgreSQL and `mod_tile`.
+
 ## `canvec` Recipe
 
 TODO: Will add an additional recipe for setting up a second database with data from Natural Resources Canada ([PDF](https://www.nrcan.gc.ca/sites/www.nrcan.gc.ca/files/earthsciences/pdf/CanVec_en.pdf))
