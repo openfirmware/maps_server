@@ -8,9 +8,9 @@ require 'date'
 # Set locale
 locale node['maps_server']['locale']
 
-# Use noop IO scheduler
-bash "Set noop scheduler" do
-  code "echo noop > /sys/block/sd*/queue/scheduler"
+# Use deadline IO scheduler
+bash "Set deadline scheduler" do
+  code "echo deadline > /sys/block/sd*/queue/scheduler"
 end
 
 execute "update grub" do
@@ -18,14 +18,14 @@ execute "update grub" do
   action :nothing
 end
 
-ruby_block "enable noop scheduler for grub" do
+ruby_block "enable deadline scheduler for grub" do
   grub_configfile = '/etc/default/grub'
   target_regex = /^GRUB_CMDLINE_LINUX="net\.ifnames=0 biosdevname=0 "$/
   block do
     sed = Chef::Util::FileEdit.new(grub_configfile)
     sed.search_file_replace(
       target_regex, 
-      'GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 elevator=noop"'
+      'GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 elevator=deadline"'
     )
     sed.write_file
   end
