@@ -43,7 +43,7 @@ end
 # Move the default database data directory to location defined in
 # attributes
 execute "move data directory" do
-  command "cp -rp /var/lib/postgresql/11/main #{node['postgresql']['conf']['data_directory']}"
+  command "cp -rp /var/lib/postgresql/11/main/* #{node['postgresql']['conf']['data_directory']}/"
   only_if { ::Dir.empty?(node['postgresql']['conf']['data_directory']) }
   notifies :restart, 'service[postgresql]', :immediate
 end
