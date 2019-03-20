@@ -28,6 +28,19 @@ service 'postgresql' do
   action :nothing
 end
 
+template '/etc/postgresql/11/main/postgresql.conf' do
+  source 'postgresql.conf.erb'
+  variables node['postgresql']['conf']
+end
+
+# Move the default database data directory to location defined in
+# attributes
+execute "move data directory" do
+  command "cp -rp /var/lib/postgresql/11/main #{node['postgresql']['conf']['data_directory'])}"
+  only_if { ::Dir.empty?(node['postgresql']['conf']['data_directory']) }
+  notifies :restart, 'service[postgresql]', :immediate
+end
+
 # Install GDAL
 package %w(gdal-bin gdal-data libgdal-dev libgdal20)
 
