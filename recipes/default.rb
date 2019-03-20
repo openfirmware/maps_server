@@ -36,6 +36,7 @@ end
 directory node['postgresql']['conf']['data_directory'] do
   owner 'postgres'
   group 'postgres'
+  mode '700'
   recursive true
   action :create
 end
