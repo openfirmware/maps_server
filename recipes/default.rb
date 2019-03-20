@@ -307,7 +307,7 @@ execute "import extract" do
   cwd node['maps_server']['data_prefix']
   live_stream true
   user 'root'
-  timeout 5400
+  timeout 86400
   not_if { 
     ::File.exists?(last_import_file)
   }
@@ -330,7 +330,7 @@ script 'clean up database after import' do
   cwd node['maps_server']['data_prefix']
   interpreter 'bash'
   user 'root'
-  timeout 3600
+  timeout 7200
   not_if { 
     ::File.exists?(post_import_vacuum_file)
   }
