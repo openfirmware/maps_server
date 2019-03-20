@@ -177,7 +177,7 @@ max_parallel_workers = <%= @max_parallel_workers %>               # maximum numb
 
 # - Settings -
 
-#wal_level = replica                    # minimal, replica, or logical
+wal_level = <%= @wal_level %>                    # minimal, replica, or logical
                                         # (change requires restart)
 fsync = <%= @fsync %>                             # flush data to disk for crash safety
                                         # (turning this off can cause

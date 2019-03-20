@@ -92,6 +92,7 @@ default['postgresql']['conf']['max_worker_processes'] = 8
 default['postgresql']['conf']['max_parallel_workers_per_gather'] = 2
 default['postgresql']['conf']['max_parallel_workers'] = 8
 
+default['postgresql']['conf']['wal_level'] = 'replica'
 default['postgresql']['conf']['fsync'] = 'on'
 default['postgresql']['conf']['synchronous_commit'] = 'on'
 default['postgresql']['conf']['wal_sync_method'] = 'fsync'
@@ -165,6 +166,9 @@ default['postgresql']['import-conf']['full_page_writes'] = 'off'
 # See https://www.postgresql.org/docs/current/static/runtime-config-wal.html
 default['postgresql']['import-conf']['wal_buffers'] = '16MB'
 default['postgresql']['import-conf']['checkpoint_completion_target'] = 0.9
+
+# Use a larger maximum WAL Size for bulk data loading
+default['postgresql']['import-conf']['max_wal_size'] = '4GB'
 
 # If using SSDs, then random reads are MUCH more efficient than spinning HDDs
 # and the query planner should be told this
