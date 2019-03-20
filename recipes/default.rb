@@ -33,6 +33,12 @@ template '/etc/postgresql/11/main/postgresql.conf' do
   variables node['postgresql']['conf']
 end
 
+directory node['postgresql']['conf']['data_directory'] do
+  owner 'postgres'
+  group 'postgres'
+  action :create
+end
+
 # Move the default database data directory to location defined in
 # attributes
 execute "move data directory" do
