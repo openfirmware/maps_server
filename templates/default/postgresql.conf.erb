@@ -424,7 +424,7 @@ default_statistics_target = <%= @default_statistics_target %>        # range 1-1
                                         #   fatal
                                         #   panic (effectively off)
 
-#log_min_duration_statement = -1        # -1 is disabled, 0 logs all statements
+log_min_duration_statement = <%= @log_min_duration_statement %> # -1 is disabled, 0 logs all statements
                                         # and their durations, > 0 logs only
                                         # statements running at least this number
                                         # of milliseconds
@@ -436,11 +436,11 @@ default_statistics_target = <%= @default_statistics_target %>        # range 1-1
 #debug_print_rewritten = off
 #debug_print_plan = off
 #debug_pretty_print = on
-#log_checkpoints = off
-#log_connections = off
-#log_disconnections = off
+log_checkpoints = <%= @log_checkpoints %>
+log_connections = <%= @log_connections %>
+log_disconnections = <%= @log_disconnections %>
 #log_duration = off
-#log_error_verbosity = default          # terse, default, or verbose messages
+log_error_verbosity = <%= @log_error_verbosity %>          # terse, default, or verbose messages
 #log_hostname = off
 log_line_prefix = '<%= @log_line_prefix %>'            # special values:
                                         #   %a = application name
@@ -462,10 +462,10 @@ log_line_prefix = '<%= @log_line_prefix %>'            # special values:
                                         #   %q = stop here in non-session
                                         #        processes
                                         #   %% = '%'
-#log_lock_waits = off                   # log lock waits >= deadlock_timeout
+log_lock_waits = <%= @log_lock_waits %>                   # log lock waits >= deadlock_timeout
 #log_statement = 'none'                 # none, ddl, mod, all
 #log_replication_commands = off
-#log_temp_files = -1                    # log temporary files equal or larger
+log_temp_files = <%= @log_temp_files %>                    # log temporary files equal or larger
                                         # than the specified size in kilobytes;
                                         # -1 disables, 0 logs all temp files
 log_timezone = '<%= @log_timezone %>'
@@ -506,7 +506,7 @@ stats_temp_directory = '<%= @stats_temp_directory %>'
 
 autovacuum = <%= @autovacuum %>                        # Enable autovacuum subprocess?  'on'
                                         # requires track_counts to also be on.
-#log_autovacuum_min_duration = -1       # -1 disables, 0 logs all actions and
+log_autovacuum_min_duration = <%= @log_autovacuum_min_duration %>       # -1 disables, 0 logs all actions and
                                         # their durations, > 0 logs only
                                         # actions running at least this number
                                         # of milliseconds.

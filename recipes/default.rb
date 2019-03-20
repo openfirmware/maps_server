@@ -296,18 +296,18 @@ execute "import extract" do
     sudo -u #{node['maps_server']['render_user']} osm2pgsql \
               --host /var/run/postgresql --create --slim --drop \
               --username #{node['maps_server']['render_user']} \
-              --database osm -C 2500 \
+              --database osm -C #{node['maps_server']['node_cache_size']} \
               #{extract_argument} \
               --tag-transform-script #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.lua \
               --style #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.style \
-              --number-processes 4 \
+              --number-processes #{node['maps_server']['import_procs']} \
               --hstore -E 4326 -G #{merged_extract} &&
     date > #{last_import_file}
   EOH
   cwd node['maps_server']['data_prefix']
   live_stream true
   user 'root'
-  timeout 3600
+  timeout 5400
   not_if { 
     ::File.exists?(last_import_file)
   }

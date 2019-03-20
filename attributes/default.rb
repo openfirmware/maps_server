@@ -41,6 +41,14 @@ default['maps_server']['extracts'] = [{
 # default['maps_server']['crop_bounding_box'] = []
 default['maps_server']['crop_bounding_box'] = [-115, 50, -113, 52]
 
+# OSM2PGSQL Node Cache Size in Megabytes
+# Default is 800 MB.
+default['maps_server']['node_cache_size'] = 1600
+
+# Number of processes to use for osm2pgsql import.
+# Should match number of threads/cores.
+default['maps_server']['import_procs'] = 12
+
 #################
 ## Rendering User
 #################
@@ -99,13 +107,24 @@ default['postgresql']['conf']['cpu_tuple_cost'] = 0.01
 default['postgresql']['conf']['effective_cache_size'] = '4GB'
 default['postgresql']['conf']['default_statistics_target'] = 100
 
-default['postgresql']['conf']['log_line_prefix'] = '%m [%p] %q%u@%d '
+# Some of these logging parameters could be used to analyze the
+# performance of the database by using a tool like pgbadger. But they
+# also generate a very large log file.
+default['postgresql']['conf']['log_min_duration_statement'] = -1
+default['postgresql']['conf']['log_checkpoints'] = 'off'
+default['postgresql']['conf']['log_connections'] = 'off'
+default['postgresql']['conf']['log_disconnections'] = 'off'
+default['postgresql']['conf']['log_error_verbosity'] = 'default'
+default['postgresql']['conf']['log_line_prefix'] = '%t [%p]: %q%u@%d '
+default['postgresql']['conf']['log_lock_waits'] = 'off'
+default['postgresql']['conf']['log_temp_files'] = -1
 default['postgresql']['conf']['log_timezone'] = 'UTC'
 default['postgresql']['conf']['cluster_name'] = '11/main'
 
 default['postgresql']['conf']['stats_temp_directory'] = '/var/run/postgresql/11-main.pg_stat_tmp'
 
 default['postgresql']['conf']['autovacuum'] = 'on'
+default['postgresql']['conf']['log_autovacuum_min_duration'] = -1
 
 default['postgresql']['conf']['datestyle'] = 'iso, mdy'
 default['postgresql']['conf']['timezone'] = 'UTC'
