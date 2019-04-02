@@ -2,41 +2,46 @@
 # Cookbook:: maps_server
 # Recipe:: default
 #
-# Copyright:: 2018, James Badger, Apache-2.0 License.
-require 'date'
+# Copyright:: 2018–2019, James Badger, Apache-2.0 License.
+require "date"
 
 # Set locale
-locale node['maps_server']['locale']
+locale node["maps_server"]["locale"]
 
 # Install PostgreSQL
 # Use the PostgreSQL Apt repository for latest versions.
-apt_repository 'postgresql' do
-  components    ['main']
-  distribution  'bionic-pgdg'
-  key           'https://www.postgresql.org/media/keys/ACCC4CF8.asc'
-  uri           'http://apt.postgresql.org/pub/repos/apt/'
+apt_repository "postgresql" do
+  components    ["main"]
+  distribution  "bionic-pgdg"
+  key           "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+  uri           "http://apt.postgresql.org/pub/repos/apt/"
 end
 
 # Update Apt cache
-apt_update 'update' do
+apt_update "update" do
   action :update
 end
 
 package %w(postgresql-11 postgresql-client-11 postgresql-server-dev-11)
 
-service 'postgresql' do
+service "postgresql" do
   action :nothing
+  supports :status => true, :restart => true, :reload => true
 end
 
-template '/etc/postgresql/11/main/postgresql.conf' do
-  source 'postgresql.conf.erb'
-  variables node['postgresql']['conf']
+template "/etc/postgresql/11/main/postgresql.conf" do
+  source "postgresql.conf.erb"
+  owner "postgres"
+  group "postgres"
+  mode 0o644
+  variables(:settings => node[:postgresql][:settings][:defaults])
+  notifies :reload, "service[postgresql]"
 end
 
-directory node['postgresql']['conf']['data_directory'] do
-  owner 'postgres'
-  group 'postgres'
-  mode '700'
+directory node["postgresql"]["conf"]["data_directory"] do
+  owner "postgres"
+  group "postgres"
+  mode "700"
   recursive true
   action :create
 end
@@ -44,9 +49,9 @@ end
 # Move the default database data directory to location defined in
 # attributes
 execute "move data directory" do
-  command "cp -rp /var/lib/postgresql/11/main/* #{node['postgresql']['conf']['data_directory']}/"
-  only_if { ::Dir.empty?(node['postgresql']['conf']['data_directory']) }
-  notifies :restart, 'service[postgresql]', :immediate
+  command "cp -rp /var/lib/postgresql/11/main/* #{node["postgresql"]["conf"]["data_directory"]}/"
+  only_if { ::Dir.empty?(node["postgresql"]["conf"]["data_directory"]) }
+  notifies :restart, "service[postgresql]", :immediate
 end
 
 # Install GDAL
@@ -214,8 +219,8 @@ git osm_carto_path do
 end
 
 # Optimize PostgreSQL for Imports
-import_conf = {}.merge(node['postgresql']['conf'])
-                .merge(node['postgresql']['import-conf'])
+import_conf = {}.merge(node['postgresql']['settings']['defaults'])
+                .merge(node['postgresql']['settings']['import'])
 
 template '/etc/postgresql/11/main/postgresql.conf' do
   source 'postgresql.conf.erb'
@@ -334,12 +339,11 @@ script 'clean up database after import' do
 end
 
 # Optimize PostgreSQL for tile serving
-rendering_conf = {}.merge(node['postgresql']['conf'])
-                   .merge(node['postgresql']['tile-conf'])
+rendering_conf = {}.merge(node['postgresql']['settings']['defaults'])
+                   .merge(node['postgresql']['settings']['tiles'])
 
 template '/etc/postgresql/11/main/postgresql.conf' do
   source 'postgresql.conf.erb'
   variables rendering_conf
   notifies :reload, 'service[postgresql]', :immediate
 end
-
