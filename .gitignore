@@ -17,6 +17,7 @@ bin/*
 .kitchen.local.yml
 
 # Chef
+/berks-cookbooks
 Berksfile.lock
 .zero-knife.rb
 Policyfile.lock.json
