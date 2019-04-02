@@ -38,16 +38,16 @@ default['maps_server']['extracts'] = [{
 # Order is the same as used by osm2pgsql:
 # min longitude, min latitude, max longitude,
 # max latitude
-# default['maps_server']['crop_bounding_box'] = []
-default['maps_server']['crop_bounding_box'] = [-115, 50, -113, 52]
+default['osm2pgsql']['crop_bounding_box'] = []
+# default['osm2pgsql']['crop_bounding_box'] = [-115, 50, -113, 52]
 
 # OSM2PGSQL Node Cache Size in Megabytes
 # Default is 800 MB.
-default['maps_server']['node_cache_size'] = 1600
+default['osm2pgsql']['node_cache_size'] = 1600
 
 # Number of processes to use for osm2pgsql import.
 # Should match number of threads/cores.
-default['maps_server']['import_procs'] = 12
+default['osm2pgsql']['import_procs'] = 12
 
 #################
 ## Rendering User

@@ -280,7 +280,7 @@ end
 
 # Crop extract to smaller region
 extract_argument = ''
-extract_bounding_box = node['maps_server']['crop_bounding_box']
+extract_bounding_box = node['osm2pgsql']['crop_bounding_box']
 if !extract_bounding_box.nil? && !extract_bounding_box.empty?
   extract_argument = "--bbox " + extract_bounding_box.join(",")
 end
@@ -293,11 +293,11 @@ execute "import extract" do
     sudo -u #{node['maps_server']['render_user']} osm2pgsql \
               --host /var/run/postgresql --create --slim --drop \
               --username #{node['maps_server']['render_user']} \
-              --database osm -C #{node['maps_server']['node_cache_size']} \
+              --database osm -C #{node['osm2pgsql']['node_cache_size']} \
               #{extract_argument} \
               --tag-transform-script #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.lua \
               --style #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/openstreetmap-carto.style \
-              --number-processes #{node['maps_server']['import_procs']} \
+              --number-processes #{node['osm2pgsql']['import_procs']} \
               --hstore -E 4326 -G #{merged_extract} &&
     date > #{last_import_file}
   EOH
