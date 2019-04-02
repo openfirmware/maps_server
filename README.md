@@ -127,10 +127,6 @@ Test Kitchen is a tool for setting up a local virtual machine that you can deplo
 
 **Important Note**: The VM will require 70 GB of free space on the host machine, due to the use of fixed allocation disks (see below for why).
 
-## `benchmark_reset` Recipe
-
-For testing in a VM when I need to test multiple PostgreSQL configurations and their effects on the osm2pgsql import speed. This recipe, when run before the `default` recipe, will cause the state files to be removed and the `osm` database to be dropped. That forces a re-import.
-
 #### Customize VM Options
 
 Adjust these based on your available hardware. These values are based on [VirtualBox][VirtualBox Config].
