@@ -94,16 +94,23 @@ maps_server_database "osm" do
   owner node[:maps_server][:render_user]
 end
 
-script "update OSM database" do
-  code <<-EOH
-    psql osm -c "CREATE EXTENSION IF NOT EXISTS postgis;
-    CREATE EXTENSION IF NOT EXISTS hstore;
-    ALTER TABLE geometry_columns OWNER TO #{node[:maps_server][:render_user]};
-    ALTER TABLE spatial_ref_sys OWNER TO #{node[:maps_server][:render_user]};"
-  EOH
-  cwd "/tmp"
-  interpreter "bash"
-  user "postgres"
+maps_server_extension "postgis" do
+  cluster "11/main"
+  database "osm"
+end
+
+maps_server_extension "hstore" do
+  cluster "11/main"
+  database "osm"
+end
+
+%w[geography_columns planet_osm_nodes planet_osm_rels planet_osm_ways raster_columns raster_overviews spatial_ref_sys].each do |table|
+  maps_server_table table do
+    cluster "11/main"
+    database "osm"
+    owner node[:maps_server][:render_user]
+    permissions node[:maps_server][:render_user] => :all
+  end
 end
 
 # Join extracts into one large extract file
