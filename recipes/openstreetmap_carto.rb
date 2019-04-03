@@ -4,6 +4,8 @@
 #
 # Copyright:: 2018–2019, James Badger, Apache-2.0 License.
 
+carto_settings = node[:maps_server][:openstreetmap_carto]
+
 # Create stylesheets directory
 directory node[:maps_server][:stylesheets_prefix] do
   recursive true
@@ -29,7 +31,7 @@ end
 # Collect the downloaded extracts file paths
 extract_file_list = []
 
-node[:maps_server][:extracts].each do |extract|
+carto_settings[:extracts].each do |extract|
   extract_url          = extract[:extract_url]
   extract_checksum_url = extract[:extract_checksum_url]
   extract_file         = "#{extract_path}/#{::File.basename(extract_url)}"
@@ -128,24 +130,24 @@ end
 
 # Crop extract to smaller region
 extract_argument = ""
-extract_bounding_box = node[:osm2pgsql][:crop_bounding_box]
+extract_bounding_box = carto_settings[:crop_bounding_box]
 if !extract_bounding_box.nil? && !extract_bounding_box.empty?
   extract_argument = "--bbox " + extract_bounding_box.join(",")
 end
 
 # Load data into database
-last_import_file = "#{node[:maps_server][:data_prefix]}/extract/last-import"
+last_import_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-last-import"
 
 execute "import extract" do
   command <<-EOH
     sudo -u #{node[:maps_server][:render_user]} osm2pgsql \
               --host /var/run/postgresql --create --slim --drop \
               --username #{node[:maps_server][:render_user]} \
-              --database osm -C #{node[:osm2pgsql][:node_cache_size]} \
+              --database osm -C #{carto_settings[:node_cache_size]} \
               #{extract_argument} \
               --tag-transform-script #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/openstreetmap-carto.lua \
               --style #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/openstreetmap-carto.style \
-              --number-processes #{node[:osm2pgsql][:import_procs]} \
+              --number-processes #{carto_settings[:import_procs]} \
               --hstore -E 4326 -G #{merged_extract} &&
     date > #{last_import_file}
   EOH
@@ -166,7 +168,7 @@ end
 # increase the timeout.
 # A timestamp file is created after the run, and used to determine if
 # the resource should be re-run.
-post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/post-import-vacuum"
+post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-post-import-vacuum"
 
 maps_server_execute "VACUUM FULL VERBOSE ANALYZE" do
   cluster "11/main"
@@ -437,17 +439,17 @@ end
 # Deploy a static website with Leaflet for browsing the raster tiles
 template "/var/www/html/leaflet.html" do
   source "leaflet.html.erb"
-  variables(latitude: node[:maps_server][:viewers][:latitude], 
-            longitude: node[:maps_server][:viewers][:longitude],
-            zoom: node[:maps_server][:viewers][:zoom])
+  variables(latitude: carto_settings[:latitude], 
+            longitude: carto_settings[:longitude],
+            zoom: carto_settings[:zoom])
 end
 
 # Deploy a static website with OpenLayers for browsing the raster tiles
 template "/var/www/html/openlayers.html" do
   source "openlayers.html.erb"
-  variables(latitude: node[:maps_server][:viewers][:latitude], 
-            longitude: node[:maps_server][:viewers][:longitude],
-            zoom: node[:maps_server][:viewers][:zoom])
+  variables(latitude: carto_settings[:latitude], 
+            longitude: carto_settings[:longitude],
+            zoom: carto_settings[:zoom])
 end
 
 service "renderd" do
