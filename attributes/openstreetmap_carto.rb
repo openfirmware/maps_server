@@ -4,7 +4,7 @@
 
 default[:maps_server][:openstreetmap_carto][:database_name] = "osm"
 default[:maps_server][:openstreetmap_carto][:http_path] = "/osm-carto/"
-default[:maps_server][:openstreetmap_carto][:bounds] = [-180, 45, 100, 70]
+default[:maps_server][:openstreetmap_carto][:bounds] = [-122, 45, -100, 62]
 
 ##################
 ## Extract Sources
