@@ -18,20 +18,42 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.js" integrity="sha256-77IKwU93jwIX7zmgEBfYGHcmeO0Fx2MoWB/ooh9QkBA=" crossorigin="anonymous"></script>
 <script>
 function init() {
-  let map = new ol.Map({
-    layers: [
-      new ol.layer.Tile({
-        source: new ol.source.OSM({
-          url: '/osm-carto/{z}/{x}/{y}.png'
+  fetch("/tiles.json")
+  .then((response) => {
+    return response.json();
+  })
+  .then((providers) => {
+    drawMap(providers);
+  })
+  .catch((err) => {
+    console.warn("Cannot load tiles", err);
+  });
+
+  function drawMap(tileProviders) {
+    let layers = tileProviders.map((provider) => {
+      return new ol.layer.Tile({
+        extent: ol.proj.transformExtent(provider.bounds, 'EPSG:4326', provider.srs),
+        source: new ol.source.XYZ({
+          attributions: provider.attribution,
+          maxZoom: provider.maxzoom,
+          minZoom: provider.minzoom,
+          projection: provider.srs,
+          url: provider.tiles[0] + "{z}/{x}/{y}.png"
         })
       })
-    ],
-    target: 'map',
-    view: new ol.View({
-      center: ol.proj.fromLonLat([0, 0]),
-      zoom: 0
-    })
-  });
+    });
+
+    let view = new ol.View({
+      center: ol.proj.fromLonLat([tileProviders[0].default.longitude, tileProviders[0].default.latitude]),
+      zoom: tileProviders[0].default.zoom
+    });
+
+    let map = new ol.Map({
+      layers: layers,
+      target: 'map',
+      view: view
+    });
+  };
 }
 </script>
 </body>
