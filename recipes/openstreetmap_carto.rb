@@ -82,15 +82,10 @@ template "/etc/postgresql/11/main/postgresql.conf" do
   notifies :reload, "service[postgresql]"
 end
 
-# Create database for OSM import
-script "create renderer database user" do
-  code <<-EOH
-    psql -c "CREATE ROLE #{node[:maps_server][:render_user]} WITH SUPERUSER LOGIN;"
-  EOH
-  cwd "/tmp"
-  interpreter "bash"
-  user "postgres"
-  not_if "psql postgres -c \"SELECT rolname FROM pg_roles;\" | grep \"#{node[:maps_server][:render_user]}\"", user: "postgres"
+# Create database user for rendering
+maps_server_user node[:maps_server][:render_user] do
+  cluster "11/main"
+  superuser true
 end
 
 script "create OSM database" do
