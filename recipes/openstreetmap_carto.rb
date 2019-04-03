@@ -88,14 +88,9 @@ maps_server_user node[:maps_server][:render_user] do
   superuser true
 end
 
-script "create OSM database" do
-  code <<-EOH
-    psql -c "CREATE DATABASE osm WITH OWNER #{node[:maps_server][:render_user]} ENCODING 'UTF-8';"
-  EOH
-  cwd "/tmp"
-  interpreter "bash"
-  user "postgres"
-  not_if "psql postgres -c \"SELECT datname FROM pg_database;\" | grep 'osm'", user: "postgres"
+maps_server_database "osm" do
+  cluster "11/main"
+  owner node[:maps_server][:render_user]
 end
 
 script "update OSM database" do
