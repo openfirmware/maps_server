@@ -215,8 +215,9 @@ execute "install packages for stylesheet" do
   not_if { ::Dir.exists?("#{awm_path}/node_modules") }
 end
 
-directory "#{awm_path}/openstreetmap-carto/data" do
+directory "#{awm_path}/openstreetmap-carto/data/awm" do
   owner node[:maps_server][:render_user]
+  recursive true
   action :create
 end
 
@@ -228,7 +229,16 @@ execute "install shapefiles/rasters" do
     NPM_CONFIG_TMP: "/home/#{node[:maps_server][:render_user]}/tmp"
   )
   user node[:maps_server][:render_user]
-  not_if { ::Dir.exists?("#{awm_path}/openstreetmap-carto/data/awm") }
+end
+
+# create link for shapefile/raster data to be accessible by XML stylesheet
+link "#{awm_path}/data" do
+  to "#{awm_path}/openstreetmap-carto/data"
+end
+
+# create link for symbol data to be accessible by XML stylesheet
+link "#{awm_path}/symbols" do
+  to "#{awm_path}/openstreetmap-carto/symbols"
 end
 
 # Install fonts for stylesheet

@@ -17,6 +17,14 @@ apt_repository "postgresql" do
   uri           "http://apt.postgresql.org/pub/repos/apt/"
 end
 
+# Enable Ubuntu src repositories
+apt_repository "ubuntu" do
+  uri "http://archive.ubuntu.com/ubuntu/"
+  distribution "bionic"
+  components %w(main restricted universe multiverse)
+  deb_src true
+end
+
 # Update Apt cache
 apt_update "update" do
   action :update
@@ -54,7 +62,25 @@ execute "move data directory" do
   notifies :restart, "service[postgresql]", :immediate
 end
 
-# Install GDAL
+# Install GDAL and libraries from source to get full support
+# 
+# liblwgeom provides ST_MakeValid and similar, needed for ArcticWebMap 
+# install scripts.
+package %w(liblwgeom-dev)
+
+bash "custom install libspatialite-dev" do
+  code <<-EOH
+  apt-get build-dep libspatialite-dev
+  apt-get source libspatialite-dev
+  cd spatialite-*
+  sed -i 's/--enable-lwgeom=no/--enable-lwgeom=yes/g' debian/rules
+  dpkg-buildpackage -us -uc
+  dpkg -i ../*.deb
+  apt-get install -f
+  EOH
+  cwd "/usr/local/src"
+end
+
 package %w(gdal-bin gdal-data libgdal-dev libgdal20)
 
 # Install PostGIS
