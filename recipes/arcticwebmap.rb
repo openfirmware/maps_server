@@ -1,23 +1,26 @@
 #
 # Cookbook:: maps_server
-# Recipe:: openstreetmap-carto
+# Recipe:: arcticwebmap
 #
-# Copyright:: 2018–2019, James Badger, Apache-2.0 License.
+# Copyright:: 2019, James Badger, Apache-2.0 License.
 
-carto_settings = node[:maps_server][:openstreetmap_carto]
+awm_settings = node[:maps_server][:arcticwebmap]
 
 # Create stylesheets directory
 directory node[:maps_server][:stylesheets_prefix] do
+  owner node[:maps_server][:render_user]
   recursive true
   action :create
 end
 
-# Install openstreetmap-carto
-osm_carto_path = "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto"
-git osm_carto_path do
+# Install arcticwebmap
+awm_path = "#{node[:maps_server][:stylesheets_prefix]}/arcticwebmap"
+git awm_path do
   depth 1
-  repository carto_settings[:git_repo]
-  reference carto_settings[:git_ref]
+  repository awm_settings[:git_repo]
+  reference awm_settings[:git_ref]
+  enable_submodules true
+  user node[:maps_server][:render_user]
 end
 
 # Download Extracts
@@ -31,7 +34,7 @@ end
 # Collect the downloaded extracts file paths
 extract_file_list = []
 
-carto_settings[:extracts].each do |extract|
+awm_settings[:extracts].each do |extract|
   extract_url          = extract[:extract_url]
   extract_checksum_url = extract[:extract_checksum_url]
   extract_file         = "#{extract_path}/#{::File.basename(extract_url)}"
@@ -91,25 +94,25 @@ maps_server_user node[:maps_server][:render_user] do
   superuser true
 end
 
-maps_server_database carto_settings[:database_name] do
+maps_server_database awm_settings[:database_name] do
   cluster "11/main"
   owner node[:maps_server][:render_user]
 end
 
 maps_server_extension "postgis" do
   cluster "11/main"
-  database carto_settings[:database_name]
+  database awm_settings[:database_name]
 end
 
 maps_server_extension "hstore" do
   cluster "11/main"
-  database carto_settings[:database_name]
+  database awm_settings[:database_name]
 end
 
 %w[geography_columns planet_osm_nodes planet_osm_rels planet_osm_ways raster_columns raster_overviews spatial_ref_sys].each do |table|
   maps_server_table table do
     cluster "11/main"
-    database carto_settings[:database_name]
+    database awm_settings[:database_name]
     owner node[:maps_server][:render_user]
     permissions node[:maps_server][:render_user] => :all
   end
@@ -120,7 +123,7 @@ package "osmosis"
 
 osmosis_args = extract_file_list.collect { |f| "--read-pbf-fast #{f}" }.join(" ")
 osmosis_args += " " + (["--merge"] * (extract_file_list.length - 1)).join(" ")
-merged_extract = "#{extract_path}/openstreetmap-carto-merged.pbf"
+merged_extract = "#{extract_path}/arcticwebmap-merged.pbf"
 
 execute "combine extracts" do
   command "osmosis #{osmosis_args} --write-pbf \"#{merged_extract}\""
@@ -130,25 +133,25 @@ end
 
 # Crop extract to smaller region
 extract_argument = ""
-extract_bounding_box = carto_settings[:crop_bounding_box]
+extract_bounding_box = awm_settings[:crop_bounding_box]
 if !extract_bounding_box.nil? && !extract_bounding_box.empty?
   extract_argument = "--bbox " + extract_bounding_box.join(",")
 end
 
 # Load data into database
-last_import_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-last-import"
+last_import_file = "#{node[:maps_server][:data_prefix]}/extract/arcticwebmap-last-import"
 
 execute "import extract" do
   command <<-EOH
     sudo -u #{node[:maps_server][:render_user]} osm2pgsql \
               --host /var/run/postgresql --create --slim --drop \
               --username #{node[:maps_server][:render_user]} \
-              --database #{carto_settings[:database_name]} -C #{carto_settings[:node_cache_size]} \
+              --database #{awm_settings[:database_name]} -C #{awm_settings[:node_cache_size]} \
               #{extract_argument} \
-              --tag-transform-script #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/openstreetmap-carto.lua \
-              --style #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/openstreetmap-carto.style \
-              --number-processes #{carto_settings[:import_procs]} \
-              --hstore -E 3857 -G #{merged_extract} &&
+              --tag-transform-script #{awm_path}/openstreetmap-carto/openstreetmap-carto.lua \
+              --style #{awm_path}/openstreetmap-carto/openstreetmap-carto.style \
+              --number-processes #{awm_settings[:import_procs]} \
+              --hstore -E 3573 -G #{merged_extract} &&
     date > #{last_import_file}
   EOH
   cwd node[:maps_server][:data_prefix]
@@ -168,11 +171,11 @@ end
 # increase the timeout.
 # A timestamp file is created after the run, and used to determine if
 # the resource should be re-run.
-post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-post-import-vacuum"
+post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/arcticwebmap-post-import-vacuum"
 
 maps_server_execute "VACUUM FULL VERBOSE ANALYZE" do
   cluster "11/main"
-  database carto_settings[:database_name]
+  database awm_settings[:database_name]
   not_if { ::File.exists?(post_import_vacuum_file) }
 end
 
@@ -191,103 +194,41 @@ template "/etc/postgresql/11/main/postgresql.conf" do
   notifies :reload, "service[postgresql]", :immediate
 end
 
-# Install shapefiles for openstreetmap-carto
-package "unzip"
+# Install Node.js for stylesheet tools
+# TODO: Maybe install a specific version of node to a prefix and use that?
+package %w(nodejs npm)
 
-directory "#{osm_carto_path}/data" do
+# Update NPM
+execute "Update npm" do
+  command "npm i -g npm"
+  only_if "npm -v | grep -E '^[345]'"
+end
+
+execute "install packages for stylesheet" do
+  command "npm install"
+  env(
+    NPM_CONFIG_CACHE: "/home/#{node[:maps_server][:render_user]}/.npm",
+    NPM_CONFIG_TMP: "/home/#{node[:maps_server][:render_user]}/tmp"
+  )
+  cwd awm_path
+  user node[:maps_server][:render_user]
+  not_if { ::Dir.exists?("#{awm_path}/node_modules") }
+end
+
+directory "#{awm_path}/openstreetmap-carto/data" do
+  owner node[:maps_server][:render_user]
   action :create
 end
 
-# Install files from a gzipped tar file into a install directory.
-# tar will extract all contents into a single directory, ignoring any
-# directory structure inside the archive.
-# If `check_file` already exists, then it will not run.
-def install_tgz(file, install_directory, check_file)
-  basename = ::File.basename(file, ".tgz")
-
-  script "install #{file}" do
-    cwd ::File.dirname(file)
-    code <<-EOH
-    mkdir -p #{basename} &&
-    tar -C #{install_directory} -x -z -f #{file} &&
-    cp -r #{basename} #{install_directory}/.
-    EOH
-    not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
-    group "root"
-    interpreter "bash"
-    user "root"
-  end
-end
-
-# Install files from a zip file into a install directory.
-# zip will use -j to extract contents into a single directory, so zip
-# files that do or don't put their contents in a directory don't matter.
-# If `check_file` already exists, then it will not run.
-def install_zip(file, install_directory, check_file)
-  basename = ::File.basename(file, ".zip")
-
-  script "install #{file}" do
-    cwd ::File.dirname(file)
-    code <<-EOH
-    mkdir -p #{basename} &&
-    unzip -j -o -d #{basename} #{file} &&
-    cp -r #{basename} #{install_directory}/.
-    EOH
-    not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
-    group "root"
-    interpreter "bash"
-    user "root"
-  end
-end
-
-# Download an archive from `url`, extract its contents, and move the
-# contents into `install_directory`.
-# If the downloaded archive file exists, the download step is skipped.
-# If `check_file` exists, the extraction/move step is skipped.
-def install_shapefiles(url, install_directory, check_file)
-  filename = ::File.basename(url)
-  download_path = "#{node[:maps_server][:data_prefix]}/#{filename}"
-
-  remote_file download_path do
-    source url
-    action :create_if_missing
-  end
-
-  extension = ::File.extname(filename)
-  case extension
-    when ".tgz"
-      install_tgz(download_path, install_directory, check_file)
-    when ".zip"
-      install_zip(download_path, install_directory, check_file)
-  end
-end
-
-# Specify shapefiles to download and extract.
-# check: skip extract step if this file exists
-# url: source of archive to download. Will not re-download file.
-shapefiles = [{
-  check: "#{osm_carto_path}/data/world_boundaries-spherical/world_bnd_m.shp",
-  url: "https://planet.openstreetmap.org/historical-shapefiles/world_boundaries-spherical.tgz"
-},
-{
-  check: "#{osm_carto_path}/data/simplified-land-polygons-complete-3857/simplified_land_polygons.shp",
-  url: "http://data.openstreetmapdata.com/simplified-land-polygons-complete-3857.zip"
-},{
-  check: "#{osm_carto_path}/data/ne_110m_admin_0_boundary_lines_land/ne_110m_admin_0_boundary_lines_land.shp",
-  url: "http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_boundary_lines_land.zip"
-}, {
-  check: "#{osm_carto_path}/data/land-polygons-split-3857/land_polygons.shp",
-  url: "http://data.openstreetmapdata.com/land-polygons-split-3857.zip"
-}, {
-  check: "#{osm_carto_path}/data/antarctica-icesheet-polygons-3857/icesheet_polygons.shp",
-  url: "http://data.openstreetmapdata.com/antarctica-icesheet-polygons-3857.zip"
-}, {
-  check: "#{osm_carto_path}/data/antarctica-icesheet-outlines-3857/icesheet_outlines.shp",
-  url: "http://data.openstreetmapdata.com/antarctica-icesheet-outlines-3857.zip"
-}]
-
-shapefiles.each do |source|
-  install_shapefiles(source[:url], "#{osm_carto_path}/data", source[:check])
+execute "install shapefiles/rasters" do
+  command "node scripts/get-datafiles.js"
+  cwd awm_path
+  env(
+    NPM_CONFIG_CACHE: "/home/#{node[:maps_server][:render_user]}/.npm",
+    NPM_CONFIG_TMP: "/home/#{node[:maps_server][:render_user]}/tmp"
+  )
+  user node[:maps_server][:render_user]
+  not_if { ::Dir.exists?("#{awm_path}/openstreetmap-carto/data/awm") }
 end
 
 # Install fonts for stylesheet
@@ -313,53 +254,32 @@ script "install noto-emoji" do
 end
 
 # Set up additional PostgreSQL indexes for the stylesheet
-osm_carto_indexes_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-indexes"
+awm_indexes_file = "#{node[:maps_server][:data_prefix]}/extract/arcticwebmap-indexes"
 
-maps_server_execute "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/indexes.sql" do
+maps_server_execute "#{awm_path}/openstreetmap-carto/indexes.sql" do
   cluster "11/main"
-  database carto_settings[:database_name]
-  not_if { ::File.exists?(osm_carto_indexes_file) }
+  database awm_settings[:database_name]
+  not_if { ::File.exists?(awm_indexes_file) }
 end
 
-file osm_carto_indexes_file do
+file awm_indexes_file do
   action :touch
-  not_if { ::File.exists?(osm_carto_indexes_file) }
+  not_if { ::File.exists?(awm_indexes_file) }
 end
 
 # Set up raster tile rendering for the stylesheet
 
-# Install Node.js for carto
-package %w(nodejs npm)
-
-# Update NPM
-execute "Update npm" do
-  command "npm i -g npm"
-  user node[:maps_server][:render_user]
-  only_if "npm -v | grep -E '^[345]'"
-end
-
-# Install carto
-execute "Install carto" do
-  command "npm i -g carto"
-  user node[:maps_server][:render_user]
-  not_if "which carto"
-end
-
-# Update stylesheets with new DB name
-script "update DB name in stylesheet" do
-  code <<-EOH
-  sed -i -e 's/dbname: "gis"/dbname: "#{carto_settings[:database_name]}"/' #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/project.mml
-  EOH
-  interpreter "bash"
-  user "root"
-end
-
 # Compile the cartoCSS stylesheet to mapnik XML
-openstreetmap_carto_xml = "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/mapnik.xml"
-execute "compile openstreetmap-carto" do
-  command "carto project.mml > #{openstreetmap_carto_xml}"
-  cwd "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto"
-  not_if { ::File.exists?(openstreetmap_carto_xml) }
+arcticwebmap_xml = "#{awm_path}/arcticwebmap.xml"
+execute "compile awm-styles" do
+  command "node scripts/compile.js xml"
+  env(
+    NPM_CONFIG_CACHE: "/home/#{node[:maps_server][:render_user]}/.npm",
+    NPM_CONFIG_TMP: "/home/#{node[:maps_server][:render_user]}/tmp"
+  )
+  cwd awm_path
+  user node[:maps_server][:render_user]
+  not_if { ::File.exists?(arcticwebmap_xml) }
 end
 
 # Create tiles directory
@@ -369,7 +289,7 @@ directory "/srv/tiles" do
   action :create
 end
 
-directory "/srv/tiles/openstreetmap-carto" do
+directory "/srv/tiles/arcticwebmap" do
   recursive true
   owner node[:maps_server][:render_user]
   action :create
@@ -377,14 +297,14 @@ end
 
 # Set the normal attributes for this stylesheet to be loaded into the
 # renderd configuration
-node.normal[:renderd][:stylesheets][:openstreetmap_carto] = {
-  description: "openstreetmap-carto",
+node.normal[:renderd][:stylesheets][:arcticwebmap] = {
+  description: "Canadian Arctic Web Map",
   host:       "localhost",
-  name:       "openstreetmap-carto",
+  name:       "arcticwebmap",
   tiledir:    "/srv/tiles",
   tilesize:    256,
-  uri:        carto_settings[:http_path],
-  xml:        openstreetmap_carto_xml
+  uri:        awm_settings[:http_path],
+  xml:        arcticwebmap_xml
 }
 
 # Use normal attributes to read stylesheets as more than one may need
@@ -437,22 +357,22 @@ end
 
 # Set the normal attributes for this tile provider to be loaded into the
 # Leaflet/OpenLayers configuration
-node.normal[:maps_server][:tile_providers][:openstreetmap_carto] = {
+node.normal[:maps_server][:tile_providers][:arcticwebmap] = {
   attribution: "(c) OpenStreetMap contributors, CC-BY-SA",
-  bounds: carto_settings[:bounds],
+  bounds: awm_settings[:bounds],
   default: {
-    latitude: carto_settings[:latitude],
-    longitude: carto_settings[:longitude],
-    zoom: carto_settings[:zoom]
+    latitude: awm_settings[:latitude],
+    longitude: awm_settings[:longitude],
+    zoom: awm_settings[:zoom]
   },
-  description: "openstreetmap-carto",
+  description: "Canadian Arctic Web Map",
   minzoom: 0,
   maxzoom: 22,
-  name: "openstreetmap-carto",
+  name: "arcticwebmap",
   scheme: "xyz",
-  srs: "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs",
-  srsName: "EPSG:3857",
-  tiles: [ carto_settings[:http_path] ]
+  srs: "+proj=laea +lat_0=90 +lon_0=-100 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs",
+  srsName: "EPSG:3573",
+  tiles: [ awm_settings[:http_path] ]
 }
 
 # Tile provider configuration file for Leaflet and OpenLayers

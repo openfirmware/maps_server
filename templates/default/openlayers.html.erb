@@ -15,6 +15,7 @@
 </head>
 <body onload="init()">
 <div id="map"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.5.0/proj4.js" integrity="sha256-KJI74PS1qv3+hue+yyIWK/l8TxvS9u4WX7QDrtHkHOo=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.js" integrity="sha256-77IKwU93jwIX7zmgEBfYGHcmeO0Fx2MoWB/ooh9QkBA=" crossorigin="anonymous"></script>
 <script>
 function init() {
@@ -31,13 +32,17 @@ function init() {
 
   function drawMap(tileProviders) {
     let layers = tileProviders.map((provider) => {
+      if (provider.srs && provider.srsName) {
+        proj4.defs(provider.srsName, provider.srs);
+      }
+
       return new ol.layer.Tile({
-        extent: ol.proj.transformExtent(provider.bounds, 'EPSG:4326', provider.srs),
+        extent: ol.proj.transformExtent(provider.bounds, 'EPSG:4326', provider.srsName),
         source: new ol.source.XYZ({
           attributions: provider.attribution,
           maxZoom: provider.maxzoom,
           minZoom: provider.minzoom,
-          projection: provider.srs,
+          projection: provider.srsName,
           url: provider.tiles[0] + "{z}/{x}/{y}.png"
         })
       })

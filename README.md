@@ -44,7 +44,9 @@ Do not do this, especially if you have not set up a smaller server yet. To put i
 
 All of the attributes in `attributes/default.rb` have been documented with default values and what they are used for in the recipes.
 
-## `default` Recipe
+## Recipes
+
+### `default` Recipe
 
 Including the default recipe, `maps_server` or `maps_server::default`, will set up the database and web server. It does not set up Apache/mod\_tile nor download and import an extract to PostgreSQL, see the `openstreetmap_carto` recipe for that.
 
@@ -64,7 +66,42 @@ Including the default recipe, `maps_server` or `maps_server::default`, will set 
 [PostGIS]: http://postgis.net
 [PostgreSQL]: https://www.postgresql.org
 
-## `openstreetmap_carto` Recipe
+### `arcticwebmap` Recipe
+
+Installs the [awm-styles][] stylesheet, downloads extracts, sets up the database and database user, imports the data to PostgreSQL in EPSG:3573 projection, then sets up renderd and Apache. Also installs Leaflet/OpenLayers demo sites to `/leaflet.html` and `/openlayers.html`.
+
+* Download [extract of OpenStreetMap data][GeoFabrik]
+* Download [awm-styles][] for import scripts
+* Optimize PostgreSQL for imports
+* Crop extract to smaller region (optional)
+* Import OpenStreetMap data to PostgreSQL
+* Optimize PostgreSQL for tile serving
+* Download shapefiles and rasters
+* Install fonts for the stylesheet
+* Set up additional PostgreSQL indexes for the stylesheet
+* Set up raster tile rendering for the stylesheet
+* Deploy a static website with [Leaflet][] for browsing the raster tiles
+* Deploy a static website with [OpenLayers][] for browsing the raster tiles
+
+This recipe can be ran with or without the `openstreetmap-carto` recipe, they should co-exist as long as they have different data storage paths defined in their attributes.
+
+[awm-styles]: https://github.com/GeoSensorWebLab/awm-styles
+[GeoFabrik]: http://download.geofabrik.de
+[Leaflet]: https://leafletjs.com
+[OpenLayers]: http://openlayers.org
+[openstreetmap-carto]: https://github.com/gravitystorm/openstreetmap-carto
+
+### `base_monitoring` Recipe
+
+Installs the munin/rrdtool/Apache 2 monitoring stack. This recipe is meant to be runnable *before* the `default` recipe, so that you can collect statistics during the import.
+
+For PostgreSQL and `mod_tile` monitoring plugins, use the `monitoring` recipe.
+
+### `monitoring` Recipe
+
+Runs the `base_monitoring` recipe, then installs custom Munin plugins to collect statistics from PostgreSQL and `mod_tile`.
+
+### `openstreetmap_carto` Recipe
 
 Installs the openstreetmap-carto stylesheet, downloads extracts, sets up the database and database user, imports the data to PostgreSQL, then sets up renderd and Apache. Also installs Leaflet/OpenLayers demo sites to `/leaflet.html` and `/openlayers.html`.
 
@@ -84,22 +121,16 @@ Download/setup/import of the database has been moved to this recipe as different
 * Deploy a static website with [Leaflet][] for browsing the raster tiles
 * Deploy a static website with [OpenLayers][] for browsing the raster tiles
 
+This recipe can be ran with or without the `arcticwebmap` recipe, they should co-exist as long as they have different data storage paths defined in their attributes.
+
 [GeoFabrik]: http://download.geofabrik.de
 [Leaflet]: https://leafletjs.com
 [OpenLayers]: http://openlayers.org
 [openstreetmap-carto]: https://github.com/gravitystorm/openstreetmap-carto
 
-## `base_monitoring` Recipe
+## WIP Recipes
 
-Installs the munin/rrdtool/Apache 2 monitoring stack. This recipe is meant to be runnable *before* the `default` recipe, so that you can collect statistics during the import.
-
-For PostgreSQL and `mod_tile` monitoring plugins, use the `monitoring` recipe.
-
-## `monitoring` Recipe
-
-Runs the `base_monitoring` recipe, then installs custom Munin plugins to collect statistics from PostgreSQL and `mod_tile`.
-
-## `canvec` Recipe
+### `canvec` Recipe
 
 TODO: Will add an additional recipe for setting up a second database with data from Natural Resources Canada ([PDF](https://www.nrcan.gc.ca/sites/www.nrcan.gc.ca/files/earthsciences/pdf/CanVec_en.pdf))
 
@@ -107,21 +138,11 @@ TODO: Will add an additional recipe for setting up a second database with data f
 * Import into PostgreSQL using GDAL
 * Add indexes for the stylesheet
 
-## `tilestrata` Recipe
+### `tilestrata` Recipe
 
 TODO: Try using [TileStrata][] as an alternative to mod\_tile for generating raster and vector tiles.
 
 [TileStrata]: https://github.com/naturalatlas/tilestrata
-
-## `monitoring` Recipe
-
-Installs [munin][] and munin-node, accessible under `/munin`. Will add munin plugins for PostgreSQL as well as the age of the planet extract file.
-
-[Munin]: http://munin-monitoring.org
-
-## `arcticwebmap` Recipe
-
-TODO: Set up a stylesheet for the ArcticWebMap style and data files.
 
 ## Test Kitchen Optimizations
 
