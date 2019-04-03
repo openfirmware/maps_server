@@ -2,8 +2,15 @@
 ## openstreetmap-carto ##
 #########################
 
+# Source repo and branch/tag/ref
+default[:maps_server][:openstreetmap_carto][:git_ref] = "v4.20.0"
+default[:maps_server][:openstreetmap_carto][:git_repo] = "https://github.com/gravitystorm/openstreetmap-carto"
+
+# Postgres Database to be created and loaded with OSM data
 default[:maps_server][:openstreetmap_carto][:database_name] = "osm"
+# mod_tile path under which tiles will be served via Apache
 default[:maps_server][:openstreetmap_carto][:http_path] = "/osm-carto/"
+# Recommended bounds (in EPSG:4326) that is sent to map clients
 default[:maps_server][:openstreetmap_carto][:bounds] = [-122, 45, -100, 62]
 
 ##################

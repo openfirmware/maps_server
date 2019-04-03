@@ -16,8 +16,8 @@ end
 osm_carto_path = "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto"
 git osm_carto_path do
   depth 1
-  repository "https://github.com/gravitystorm/openstreetmap-carto"
-  reference "v4.20.0"
+  repository carto_settings[:git_repo]
+  reference carto_settings[:git_ref]
 end
 
 # Download Extracts
