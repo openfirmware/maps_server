@@ -3,6 +3,7 @@
 <head>
   <title>OpenLayers Map</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.css" integrity="sha256-rQq4Fxpq3LlPQ8yP11i6Z2lAo82b6ACDgd35CKyNEBw=" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://unpkg.com/ol-layerswitcher@3.2.0/src/ol-layerswitcher.css" crossorigin="anonymous" />
   <style>
   #map {
     position: absolute;
@@ -17,6 +18,7 @@
 <div id="map"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.5.0/proj4.js" integrity="sha256-KJI74PS1qv3+hue+yyIWK/l8TxvS9u4WX7QDrtHkHOo=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.5/ol.js" integrity="sha256-77IKwU93jwIX7zmgEBfYGHcmeO0Fx2MoWB/ooh9QkBA=" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/ol-layerswitcher@3.2.0" crossorigin="anonymous"></script>
 <script>
 function init() {
   fetch("/tiles.json")
@@ -44,7 +46,9 @@ function init() {
           minZoom: provider.minzoom,
           projection: provider.srsName,
           url: provider.tiles[0] + "{z}/{x}/{y}.png"
-        })
+        }),
+        title: provider.name,
+        type: 'base'
       })
     });
 
@@ -58,6 +62,9 @@ function init() {
       target: 'map',
       view: view
     });
+
+    let layerSwitcher = new ol.control.LayerSwitcher();
+    map.addControl(layerSwitcher);
   };
 }
 </script>
