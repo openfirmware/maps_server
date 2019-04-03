@@ -433,20 +433,38 @@ service "apache2" do
   action :reload
 end
 
+# Set the normal attributes for this tile provider to be loaded into the
+# Leaflet/OpenLayers configuration
+node.normal[:maps_server][:tile_providers][:openstreetmap_carto] = {
+  attribution: "(c) OpenStreetMap contributors, CC-BY-SA",
+  bounds: carto_settings[:bounds],
+  default: {
+    latitude: carto_settings[:latitude],
+    longitude: carto_settings[:longitude],
+    zoom: carto_settings[:zoom]
+  },
+  description: "openstreetmap-carto",
+  minzoom: 0,
+  maxzoom: 22,
+  name: "openstreetmap-carto",
+  scheme: "xyz",
+  srs: "EPSG:3857",
+  tiles: [ carto_settings[:http_path] ]
+}
+
+# Tile provider configuration file for Leaflet and OpenLayers
+file "/var/www/html/tiles.json" do
+  content JSON.pretty_generate(node.normal[:maps_server][:tile_providers].values)
+end
+
 # Deploy a static website with Leaflet for browsing the raster tiles
 template "/var/www/html/leaflet.html" do
   source "leaflet.html.erb"
-  variables(latitude: carto_settings[:latitude], 
-            longitude: carto_settings[:longitude],
-            zoom: carto_settings[:zoom])
 end
 
 # Deploy a static website with OpenLayers for browsing the raster tiles
 template "/var/www/html/openlayers.html" do
   source "openlayers.html.erb"
-  variables(latitude: carto_settings[:latitude], 
-            longitude: carto_settings[:longitude],
-            zoom: carto_settings[:zoom])
 end
 
 service "renderd" do

@@ -28,8 +28,8 @@ function init() {
     ],
     target: 'map',
     view: new ol.View({
-      center: ol.proj.fromLonLat([<%= @longitude %>, <%= @latitude %>]),
-      zoom: <%= @zoom %>
+      center: ol.proj.fromLonLat([0, 0]),
+      zoom: 0
     })
   });
 }

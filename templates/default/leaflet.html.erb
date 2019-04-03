@@ -18,7 +18,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.4/leaflet.js" integrity="sha256-tfcLorv/GWSrbbsn6NVgflWp1YOmTjyJ8HWtfXaOaJc=" crossorigin="anonymous"></script>
 <script>
 function init() {
-  let map = L.map('map').setView([<%= @latitude %>, <%= @longitude %>], <%= @zoom %>);
+  let map = L.map('map').setView([0, 0], 0);
 
   L.tileLayer('/osm-carto/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
