@@ -91,25 +91,25 @@ maps_server_user node[:maps_server][:render_user] do
   superuser true
 end
 
-maps_server_database "osm" do
+maps_server_database carto_settings[:database_name] do
   cluster "11/main"
   owner node[:maps_server][:render_user]
 end
 
 maps_server_extension "postgis" do
   cluster "11/main"
-  database "osm"
+  database carto_settings[:database_name]
 end
 
 maps_server_extension "hstore" do
   cluster "11/main"
-  database "osm"
+  database carto_settings[:database_name]
 end
 
 %w[geography_columns planet_osm_nodes planet_osm_rels planet_osm_ways raster_columns raster_overviews spatial_ref_sys].each do |table|
   maps_server_table table do
     cluster "11/main"
-    database "osm"
+    database carto_settings[:database_name]
     owner node[:maps_server][:render_user]
     permissions node[:maps_server][:render_user] => :all
   end
@@ -172,7 +172,7 @@ post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/openstree
 
 maps_server_execute "VACUUM FULL VERBOSE ANALYZE" do
   cluster "11/main"
-  database "osm"
+  database carto_settings[:database_name]
   not_if { ::File.exists?(post_import_vacuum_file) }
 end
 
@@ -317,7 +317,7 @@ osm_carto_indexes_file = "#{node[:maps_server][:data_prefix]}/extract/openstreet
 
 maps_server_execute "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/indexes.sql" do
   cluster "11/main"
-  database "osm"
+  database carto_settings[:database_name]
   not_if { ::File.exists?(osm_carto_indexes_file) }
 end
 
@@ -346,7 +346,7 @@ end
 # Update stylesheets with new DB name
 script "update DB name in stylesheet" do
   code <<-EOH
-  sed -i -e 's/dbname: "gis"/dbname: "osm"/' #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/project.mml
+  sed -i -e 's/dbname: "gis"/dbname: "#{carto_settings[:database_name]}"/' #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/project.mml
   EOH
   interpreter "bash"
   user "root"
@@ -382,7 +382,7 @@ end
 # Update renderd configuration for openstreetmap-carto
 styles = [{
   name: "openstreetmap-carto",
-  uri: "/osm/",
+  uri: carto_settings[:http_path],
   tiledir: "/srv/tiles",
   xml: openstreetmap_carto_xml,
   host: "localhost",

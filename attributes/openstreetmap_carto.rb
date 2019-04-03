@@ -2,6 +2,9 @@
 ## openstreetmap-carto ##
 #########################
 
+default[:maps_server][:openstreetmap_carto][:database_name] = "osm"
+default[:maps_server][:openstreetmap_carto][:http_path] = "/osm-carto/"
+
 ##################
 ## Extract Sources
 ##################
