@@ -20,7 +20,7 @@
 function init() {
   let map = L.map('map').setView([<%= @latitude %>, <%= @longitude %>], <%= @zoom %>);
 
-  L.tileLayer('/osm/{z}/{x}/{y}.png', {
+  L.tileLayer('/osm-carto/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 }

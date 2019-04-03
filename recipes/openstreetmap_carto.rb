@@ -373,17 +373,20 @@ directory "/srv/tiles/openstreetmap-carto" do
   action :create
 end
 
-# Update renderd configuration for openstreetmap-carto
-styles = [{
-  name: "openstreetmap-carto",
-  uri: carto_settings[:http_path],
-  tiledir: "/srv/tiles",
-  xml: openstreetmap_carto_xml,
-  host: "localhost",
-  tilesize: 256,
-  description: "openstreetmap-carto"
-}]
+# Set the normal attributes for this stylesheet to be loaded into the
+# renderd configuration
+node.normal[:renderd][:stylesheets][:openstreetmap_carto] = {
+  description: "openstreetmap-carto",
+  host:       "localhost",
+  name:       "openstreetmap-carto",
+  tiledir:    "/srv/tiles",
+  tilesize:    256,
+  uri:        carto_settings[:http_path],
+  xml:        openstreetmap_carto_xml
+}
 
+# Use normal attributes to read stylesheets as more than one may need
+# to be loaded into the renderd configuration.
 template "/usr/local/etc/renderd.conf" do
   source "renderd.conf.erb"
   variables(
@@ -391,7 +394,7 @@ template "/usr/local/etc/renderd.conf" do
     tile_dir: "/srv/tiles", 
     plugins_dir: "/usr/lib/mapnik/3.0/input",
     font_dir: "/usr/share/fonts",
-    configurations: styles
+    configurations: node.normal[:renderd][:stylesheets].values
   )
   notifies :restart, "service[renderd]", :immediate
 end
