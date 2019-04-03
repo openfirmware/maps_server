@@ -2,23 +2,198 @@
 # Cookbook:: maps_server
 # Recipe:: openstreetmap-carto
 #
-# Copyright:: 2018, James Badger, Apache-2.0 License.
+# Copyright:: 2018–2019, James Badger, Apache-2.0 License.
 
 # Create stylesheets directory
-directory node['maps_server']['stylesheets_prefix'] do
+directory node[:maps_server][:stylesheets_prefix] do
   recursive true
   action :create
 end
 
 # Install openstreetmap-carto
-osm_carto_path = "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto"
+osm_carto_path = "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto"
 git osm_carto_path do
   depth 1
-  repository 'https://github.com/gravitystorm/openstreetmap-carto'
+  repository "https://github.com/gravitystorm/openstreetmap-carto"
+end
+
+# Download Extracts
+
+extract_path = "#{node[:maps_server][:data_prefix]}/extract"
+directory extract_path do
+  recursive true
+  action :create
+end
+
+# Collect the downloaded extracts file paths
+extract_file_list = []
+
+node[:maps_server][:extracts].each do |extract|
+  extract_url          = extract[:extract_url]
+  extract_checksum_url = extract[:extract_checksum_url]
+  extract_file         = "#{extract_path}/#{::File.basename(extract_url)}"
+  extract_file_list.push(extract_file)
+
+  # Download the extract
+  # Only runs if a) a downloaded file doesn't exist, 
+  # b) a date requirement for the extract hasn't been set,
+  # c) The remote file is newer than the extract date requirement
+  remote_file extract_file do
+    source extract_url
+    only_if {
+      edate = extract[:extract_date_requirement]
+      !::File.exists?(extract_file) ||
+      !edate.nil? && !edate.empty? && ::File.mtime(extract_file) < DateTime.strptime(edate).to_time
+    }
+    action :create
+  end
+
+  # If there is a checksum URL, download it and validate the extract
+  # against the checksum provided by the source. Assumes md5.
+  if !(extract_checksum_url.nil? || extract_checksum_url.empty?)
+    extract_checksum_file = "#{extract_path}/#{::File.basename(extract_checksum_url)}"
+    remote_file extract_checksum_file do
+      source extract_checksum_url
+      only_if {
+        edate = extract[:extract_date_requirement]
+        !::File.exists?(extract_checksum_file) ||
+        !edate.nil? && !edate.empty? && ::File.mtime(extract_checksum_file) < DateTime.strptime(edate).to_time
+      }
+      action :create
+    end
+
+    execute "validate extract" do
+      command "md5sum --check #{extract_checksum_file}"
+      cwd ::File.dirname(extract_checksum_file)
+      user "root"
+    end
+  end
+end
+
+# Optimize PostgreSQL for Imports
+import_conf = node[:postgresql][:settings][:defaults].merge(node[:postgresql][:settings][:import])
+
+template "/etc/postgresql/11/main/postgresql.conf" do
+  source "postgresql.conf.erb"
+  owner "postgres"
+  group "postgres"
+  mode 0o644
+  variables(settings: import_conf)
+  notifies :reload, "service[postgresql]"
+end
+
+# Create database for OSM import
+script "create renderer database user" do
+  code <<-EOH
+    psql -c "CREATE ROLE #{node[:maps_server][:render_user]} WITH SUPERUSER LOGIN;"
+  EOH
+  cwd "/tmp"
+  interpreter "bash"
+  user "postgres"
+  not_if "psql postgres -c \"SELECT rolname FROM pg_roles;\" | grep \"#{node[:maps_server][:render_user]}\"", user: "postgres"
+end
+
+script "create OSM database" do
+  code <<-EOH
+    psql -c "CREATE DATABASE osm WITH OWNER #{node[:maps_server][:render_user]} ENCODING 'UTF-8';"
+  EOH
+  cwd "/tmp"
+  interpreter "bash"
+  user "postgres"
+  not_if "psql postgres -c \"SELECT datname FROM pg_database;\" | grep 'osm'", user: "postgres"
+end
+
+script "update OSM database" do
+  code <<-EOH
+    psql osm -c "CREATE EXTENSION IF NOT EXISTS postgis;
+    CREATE EXTENSION IF NOT EXISTS hstore;
+    ALTER TABLE geometry_columns OWNER TO #{node[:maps_server][:render_user]};
+    ALTER TABLE spatial_ref_sys OWNER TO #{node[:maps_server][:render_user]};"
+  EOH
+  cwd "/tmp"
+  interpreter "bash"
+  user "postgres"
+end
+
+# Join extracts into one large extract file
+package "osmosis"
+
+osmosis_args = extract_file_list.collect { |f| "--read-pbf-fast #{f}" }.join(" ")
+osmosis_args += " " + (["--merge"] * (extract_file_list.length - 1)).join(" ")
+merged_extract = "#{extract_path}/merged.pbf"
+
+execute "combine extracts" do
+  command "osmosis #{osmosis_args} --write-pbf \"#{merged_extract}\""
+  timeout 3600
+  not_if { ::File.exist?(merged_extract) }
+end
+
+# Crop extract to smaller region
+extract_argument = ""
+extract_bounding_box = node[:osm2pgsql][:crop_bounding_box]
+if !extract_bounding_box.nil? && !extract_bounding_box.empty?
+  extract_argument = "--bbox " + extract_bounding_box.join(",")
+end
+
+# Load data into database
+last_import_file = "#{node[:maps_server][:data_prefix]}/extract/last-import"
+
+execute "import extract" do
+  command <<-EOH
+    sudo -u #{node[:maps_server][:render_user]} osm2pgsql \
+              --host /var/run/postgresql --create --slim --drop \
+              --username #{node[:maps_server][:render_user]} \
+              --database osm -C #{node[:osm2pgsql][:node_cache_size]} \
+              #{extract_argument} \
+              --tag-transform-script #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/openstreetmap-carto.lua \
+              --style #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/openstreetmap-carto.style \
+              --number-processes #{node[:osm2pgsql][:import_procs]} \
+              --hstore -E 4326 -G #{merged_extract} &&
+    date > #{last_import_file}
+  EOH
+  cwd node[:maps_server][:data_prefix]
+  live_stream true
+  user "root"
+  timeout 86400
+  not_if { 
+    ::File.exists?(last_import_file)
+  }
+end
+
+# Clean up the database by running a PostgreSQL VACUUM and ANALYZE.
+# These improve performance and disk space usage, and therefore queries 
+# for generating tiles.
+# This should not take very long for small extracts (city/province
+# level). Continent/planet level databases will probably have to
+# increase the timeout.
+# A timestamp file is created after the run, and used to determine if
+# the resource should be re-run.
+post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/post-import-vacuum"
+script "clean up database after import" do
+  code <<-EOH
+    sudo -u #{node[:maps_server][:render_user]} psql -d osm -c "VACUUM FULL VERBOSE ANALYZE;" &&
+    date > #{post_import_vacuum_file}
+  EOH
+  cwd node[:maps_server][:data_prefix]
+  interpreter "bash"
+  user "root"
+  timeout 7200
+  not_if { 
+    ::File.exists?(post_import_vacuum_file)
+  }
+end
+
+# Optimize PostgreSQL for tile serving
+rendering_conf = node[:postgresql][:settings][:defaults].merge(node[:postgresql][:settings][:tiles])
+
+template "/etc/postgresql/11/main/postgresql.conf" do
+  source "postgresql.conf.erb"
+  variables(settings: rendering_conf)
+  notifies :reload, "service[postgresql]", :immediate
 end
 
 # Install shapefiles for openstreetmap-carto
-package 'unzip'
+package "unzip"
 
 directory "#{osm_carto_path}/data" do
   action :create
@@ -39,9 +214,9 @@ def install_tgz(file, install_directory, check_file)
     cp -r #{basename} #{install_directory}/.
     EOH
     not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
-    group 'root'
-    interpreter 'bash'
-    user 'root'
+    group "root"
+    interpreter "bash"
+    user "root"
   end
 end
 
@@ -60,9 +235,9 @@ def install_zip(file, install_directory, check_file)
     cp -r #{basename} #{install_directory}/.
     EOH
     not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
-    group 'root'
-    interpreter 'bash'
-    user 'root'
+    group "root"
+    interpreter "bash"
+    user "root"
   end
 end
 
@@ -72,7 +247,7 @@ end
 # If `check_file` exists, the extraction/move step is skipped.
 def install_shapefiles(url, install_directory, check_file)
   filename = ::File.basename(url)
-  download_path = "#{node['maps_server']['data_prefix']}/#{filename}"
+  download_path = "#{node[:maps_server][:data_prefix]}/#{filename}"
 
   remote_file download_path do
     source url
@@ -119,10 +294,10 @@ end
 # Install fonts for stylesheet
 package %w(fontconfig fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted fonts-hanazono ttf-unifont)
 
-noto_emoji_path = "#{node['maps_server']['software_prefix']}/noto-emoji"
+noto_emoji_path = "#{node[:maps_server][:software_prefix]}/noto-emoji"
 git noto_emoji_path do
   depth 1
-  repository 'https://github.com/googlei18n/noto-emoji'
+  repository "https://github.com/googlei18n/noto-emoji"
 end
 
 script "install noto-emoji" do
@@ -131,22 +306,22 @@ script "install noto-emoji" do
   fc-cache -f -v
   EOH
   cwd noto_emoji_path
-  interpreter 'bash'
-  user 'root'
-  group 'root'
+  interpreter "bash"
+  user "root"
+  group "root"
   not_if { ::File.exists?("/usr/local/share/fonts/NotoEmoji-Regular.ttf") }
 end
 
 # Set up additional PostgreSQL indexes for the stylesheet
-osm_carto_indexes_file = "#{node['maps_server']['data_prefix']}/extract/openstreetmap-carto-indexes"
-script 'add indexes for openstreetmap-carto' do
+osm_carto_indexes_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-indexes"
+script "add indexes for openstreetmap-carto" do
   code <<-EOH
-    sudo -u #{node['maps_server']['render_user']} psql -d osm -f "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/indexes.sql" && \
+    sudo -u #{node[:maps_server][:render_user]} psql -d osm -f "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/indexes.sql" && \
     date > #{osm_carto_indexes_file}
   EOH
-  cwd node['maps_server']['stylesheets_prefix']
-  interpreter 'bash'
-  user 'root'
+  cwd node[:maps_server][:stylesheets_prefix]
+  interpreter "bash"
+  user "root"
   timeout 3600
   not_if { 
     ::File.exists?(osm_carto_indexes_file)
@@ -171,38 +346,38 @@ execute "Install carto" do
 end
 
 # Update stylesheets with new DB name
-script 'update DB name in stylesheet' do
+script "update DB name in stylesheet" do
   code <<-EOH
-  sed -i -e 's/dbname: "gis"/dbname: "osm"/' #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/project.mml
+  sed -i -e 's/dbname: "gis"/dbname: "osm"/' #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/project.mml
   EOH
-  interpreter 'bash'
-  user 'root'
+  interpreter "bash"
+  user "root"
 end
 
 # Update stylesheet to use EPSG:4326 for OSM data
-execute 'update projection in stylesheet' do
-  command %Q[perl -i -0pe 's/extents(\\s+Datasource:\\s+<<: \\*osm2pgsql)/extents84$1/g' #{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/project.mml]
-  user 'root'
+execute "update projection in stylesheet" do
+  command %Q[perl -i -0pe 's/extents(\\s+Datasource:\\s+<<: \\*osm2pgsql)/extents84$1/g' #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/project.mml]
+  user "root"
 end
 
 # Compile the cartoCSS stylesheet to mapnik XML
-openstreetmap_carto_xml = "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto/mapnik.xml"
+openstreetmap_carto_xml = "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/mapnik.xml"
 execute "compile openstreetmap-carto" do
   command "carto project.mml > #{openstreetmap_carto_xml}"
-  cwd "#{node['maps_server']['stylesheets_prefix']}/openstreetmap-carto"
+  cwd "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto"
   not_if { ::File.exists?(openstreetmap_carto_xml) }
 end
 
 # Create tiles directory
 directory "/srv/tiles" do
   recursive true
-  owner node['maps_server']['render_user']
+  owner node[:maps_server][:render_user]
   action :create
 end
 
 directory "/srv/tiles/openstreetmap-carto" do
   recursive true
-  owner node['maps_server']['render_user']
+  owner node[:maps_server][:render_user]
   action :create
 end
 
@@ -217,21 +392,21 @@ styles = [{
   description: "openstreetmap-carto"
 }]
 
-template '/usr/local/etc/renderd.conf' do
-  source 'renderd.conf.erb'
+template "/usr/local/etc/renderd.conf" do
+  source "renderd.conf.erb"
   variables(
     num_threads: 4, 
-    tile_dir: '/srv/tiles', 
+    tile_dir: "/srv/tiles", 
     plugins_dir: "/usr/lib/mapnik/3.0/input",
     font_dir: "/usr/share/fonts",
     configurations: styles
   )
-  notifies :restart, 'service[renderd]', :immediate
+  notifies :restart, "service[renderd]", :immediate
 end
 
 # Install Apache mod_tile loader
-cookbook_file '/etc/apache2/mods-available/tile.load' do
-  source 'mod_tile.load'
+cookbook_file "/etc/apache2/mods-available/tile.load" do
+  source "mod_tile.load"
   action :create
 end
 
@@ -255,7 +430,7 @@ end
 execute "enable tileserver apache site" do
   command "a2ensite tileserver"
   not_if { ::File.exists?("/etc/apache2/sites-enabled/tileserver.conf") }
-  notifies :reload, 'service[apache2]', :immediate
+  notifies :reload, "service[apache2]", :immediate
 end
 
 # A second reload of Apache is needed, for some unknown reason.
@@ -264,22 +439,22 @@ service "apache2" do
 end
 
 # Deploy a static website with Leaflet for browsing the raster tiles
-template '/var/www/html/leaflet.html' do
-  source 'leaflet.html.erb'
-  variables(latitude: node['maps_server']['viewers']['latitude'], 
-            longitude: node['maps_server']['viewers']['longitude'],
-            zoom: node['maps_server']['viewers']['zoom'])
+template "/var/www/html/leaflet.html" do
+  source "leaflet.html.erb"
+  variables(latitude: node[:maps_server][:viewers][:latitude], 
+            longitude: node[:maps_server][:viewers][:longitude],
+            zoom: node[:maps_server][:viewers][:zoom])
 end
 
 # Deploy a static website with OpenLayers for browsing the raster tiles
-template '/var/www/html/openlayers.html' do
-  source 'openlayers.html.erb'
-  variables(latitude: node['maps_server']['viewers']['latitude'], 
-            longitude: node['maps_server']['viewers']['longitude'],
-            zoom: node['maps_server']['viewers']['zoom'])
+template "/var/www/html/openlayers.html" do
+  source "openlayers.html.erb"
+  variables(latitude: node[:maps_server][:viewers][:latitude], 
+            longitude: node[:maps_server][:viewers][:longitude],
+            zoom: node[:maps_server][:viewers][:zoom])
 end
 
-service 'renderd' do
+service "renderd" do
   action :restart
 end
 

@@ -30,7 +30,10 @@ platforms:
 suites:
   - name: default
     run_list:
+      - recipe[maps_server::base_monitoring]
       - recipe[maps_server::default]
+      - recipe[maps_server::openstreetmap_carto]
+      # - recipe[maps_server::monitoring]
     verifier:
       inspec_tests:
         - test/integration/default

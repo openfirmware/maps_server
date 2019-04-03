@@ -46,7 +46,7 @@ All of the attributes in `attributes/default.rb` have been documented with defau
 
 ## `default` Recipe
 
-Including the default recipe, `maps_server` or `maps_server::default`, will set up the database, web server, data extract, and import the data to PostgreSQL. It does not set up Apache/mod\_tile for serving raster tiles, see the `openstreetmap_carto` for that.
+Including the default recipe, `maps_server` or `maps_server::default`, will set up the database and web server. It does not set up Apache/mod\_tile nor download and import an extract to PostgreSQL, see the `openstreetmap_carto` recipe for that.
 
 * Install [PostgreSQL][] 11
 * Install [GDAL][]
@@ -55,16 +55,9 @@ Including the default recipe, `maps_server` or `maps_server::default`, will set 
 * Install [Apache HTTP Server][] 2.4
 * Install [mapnik][]
 * Install [mod\_tile][modtile]
-* Download [extract of OpenStreetMap data][GeoFabrik]
-* Download [openstreetmap-carto][] for import scripts
-* Optimize PostgreSQL for imports
-* Crop extract to smaller region (optional)
-* Import OpenStreetMap data to PostgreSQL
-* Optimize PostgreSQL for tile serving
 
 [Apache HTTP Server]: https://httpd.apache.org
 [GDAL]: https://www.gdal.org
-[GeoFabrik]: http://download.geofabrik.de
 [mapnik]: https://mapnik.org
 [modtile]: https://github.com/openstreetmap/mod_tile
 [osm2pgsql]: https://github.com/openstreetmap/osm2pgsql
@@ -73,8 +66,16 @@ Including the default recipe, `maps_server` or `maps_server::default`, will set 
 
 ## `openstreetmap_carto` Recipe
 
-Installs the openstreetmap-carto stylesheet, then sets up renderd and Apache. Also installs Leaflet/OpenLayers demo sites to `/leaflet.html` and `/openlayers.html`.
+Installs the openstreetmap-carto stylesheet, downloads extracts, sets up the database and database user, imports the data to PostgreSQL, then sets up renderd and Apache. Also installs Leaflet/OpenLayers demo sites to `/leaflet.html` and `/openlayers.html`.
 
+Download/setup/import of the database has been moved to this recipe as different stylesheets may require different import options (projection, regions, etc).
+
+* Download [extract of OpenStreetMap data][GeoFabrik]
+* Download [openstreetmap-carto][] for import scripts
+* Optimize PostgreSQL for imports
+* Crop extract to smaller region (optional)
+* Import OpenStreetMap data to PostgreSQL
+* Optimize PostgreSQL for tile serving
 * Download [CartoCSS stylesheets][openstreetmap-carto]
 * Download shapefiles
 * Install fonts for the stylesheet
@@ -83,6 +84,7 @@ Installs the openstreetmap-carto stylesheet, then sets up renderd and Apache. Al
 * Deploy a static website with [Leaflet][] for browsing the raster tiles
 * Deploy a static website with [OpenLayers][] for browsing the raster tiles
 
+[GeoFabrik]: http://download.geofabrik.de
 [Leaflet]: https://leafletjs.com
 [OpenLayers]: http://openlayers.org
 [openstreetmap-carto]: https://github.com/gravitystorm/openstreetmap-carto
