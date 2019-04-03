@@ -83,6 +83,7 @@ mod_tile_path = "#{node[:maps_server][:software_prefix]}/mod_tile"
 git mod_tile_path do
   depth 1
   repository "https://github.com/openstreetmap/mod_tile"
+  reference "master"
 end
 
 execute "mod_tile: autogen" do

@@ -15,6 +15,7 @@ osm_carto_path = "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto
 git osm_carto_path do
   depth 1
   repository "https://github.com/gravitystorm/openstreetmap-carto"
+  reference "v4.20.0"
 end
 
 # Download Extracts
@@ -288,6 +289,7 @@ noto_emoji_path = "#{node[:maps_server][:software_prefix]}/noto-emoji"
 git noto_emoji_path do
   depth 1
   repository "https://github.com/googlei18n/noto-emoji"
+  reference "master"
 end
 
 script "install noto-emoji" do
