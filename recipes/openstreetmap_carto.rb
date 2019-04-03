@@ -148,7 +148,7 @@ execute "import extract" do
               --tag-transform-script #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/openstreetmap-carto.lua \
               --style #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/openstreetmap-carto.style \
               --number-processes #{carto_settings[:import_procs]} \
-              --hstore -E 4326 -G #{merged_extract} &&
+              --hstore -E 3857 -G #{merged_extract} &&
     date > #{last_import_file}
   EOH
   cwd node[:maps_server][:data_prefix]
@@ -349,12 +349,6 @@ script "update DB name in stylesheet" do
   sed -i -e 's/dbname: "gis"/dbname: "#{carto_settings[:database_name]}"/' #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/project.mml
   EOH
   interpreter "bash"
-  user "root"
-end
-
-# Update stylesheet to use EPSG:4326 for OSM data
-execute "update projection in stylesheet" do
-  command %Q[perl -i -0pe 's/extents(\\s+Datasource:\\s+<<: \\*osm2pgsql)/extents84$1/g' #{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/project.mml]
   user "root"
 end
 
