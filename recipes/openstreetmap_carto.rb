@@ -167,18 +167,17 @@ end
 # A timestamp file is created after the run, and used to determine if
 # the resource should be re-run.
 post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/post-import-vacuum"
-script "clean up database after import" do
-  code <<-EOH
-    sudo -u #{node[:maps_server][:render_user]} psql -d osm -c "VACUUM FULL VERBOSE ANALYZE;" &&
-    date > #{post_import_vacuum_file}
-  EOH
-  cwd node[:maps_server][:data_prefix]
-  interpreter "bash"
-  user "root"
-  timeout 7200
-  not_if { 
-    ::File.exists?(post_import_vacuum_file)
-  }
+
+maps_server_execute "VACUUM FULL VERBOSE ANALYZE" do
+  cluster "11/main"
+  database "osm"
+  not_if { ::File.exists?(post_import_vacuum_file) }
+end
+
+
+file post_import_vacuum_file do
+  action :touch
+  not_if { ::File.exists?(post_import_vacuum_file) }
 end
 
 # Optimize PostgreSQL for tile serving
@@ -313,18 +312,16 @@ end
 
 # Set up additional PostgreSQL indexes for the stylesheet
 osm_carto_indexes_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-indexes"
-script "add indexes for openstreetmap-carto" do
-  code <<-EOH
-    sudo -u #{node[:maps_server][:render_user]} psql -d osm -f "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/indexes.sql" && \
-    date > #{osm_carto_indexes_file}
-  EOH
-  cwd node[:maps_server][:stylesheets_prefix]
-  interpreter "bash"
-  user "root"
-  timeout 3600
-  not_if { 
-    ::File.exists?(osm_carto_indexes_file)
-  }
+
+maps_server_execute "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/indexes.sql" do
+  cluster "11/main"
+  database "osm"
+  not_if { ::File.exists?(osm_carto_indexes_file) }
+end
+
+file osm_carto_indexes_file do
+  action :touch
+  not_if { ::File.exists?(osm_carto_indexes_file) }
 end
 
 # Set up raster tile rendering for the stylesheet
