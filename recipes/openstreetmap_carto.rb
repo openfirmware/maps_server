@@ -120,7 +120,7 @@ package "osmosis"
 
 osmosis_args = extract_file_list.collect { |f| "--read-pbf-fast #{f}" }.join(" ")
 osmosis_args += " " + (["--merge"] * (extract_file_list.length - 1)).join(" ")
-merged_extract = "#{extract_path}/merged.pbf"
+merged_extract = "#{extract_path}/openstreetmap-carto-merged.pbf"
 
 execute "combine extracts" do
   command "osmosis #{osmosis_args} --write-pbf \"#{merged_extract}\""
