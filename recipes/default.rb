@@ -78,9 +78,9 @@ package %w(liblwgeom-dev)
 
 ruby_block "Store libspatialite build flag" do
   block do
-    node.normal[:postgresql][:built_libspatialite] = true
+    node.normal[:maps_server][:built_libspatialite] = true
   end
-  not_if { node[:postgresql][:built_libspatialite] }
+  not_if { node[:maps_server][:built_libspatialite] }
   action :nothing
 end
 
