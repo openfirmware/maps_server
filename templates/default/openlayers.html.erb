@@ -33,13 +33,14 @@ function init() {
   });
 
   function drawMap(tileProviders) {
+    let map;
+
     let layers = tileProviders.map((provider) => {
       if (provider.srs && provider.srsName) {
         proj4.defs(provider.srsName, provider.srs);
       }
 
-      return new ol.layer.Tile({
-        extent: ol.proj.transformExtent(provider.bounds, 'EPSG:4326', provider.srsName),
+      let layer = new ol.layer.Tile({
         source: new ol.source.XYZ({
           attributions: provider.attribution,
           maxZoom: provider.maxzoom,
@@ -48,24 +49,34 @@ function init() {
           url: provider.tiles[0] + "{z}/{x}/{y}.png"
         }),
         title: provider.name,
-        type: 'base'
-      })
+        type: 'base',
+        visible: false,
+        view: new ol.View({
+          center: ol.proj.fromLonLat([provider.default.longitude, provider.default.latitude]),
+          projection: provider.srsName,
+          zoom: provider.default.zoom
+        })
+      });
+
+      layer.on("change:visible", (e) => {
+        if (map && e.target.get("visible")) {
+          map.setView(e.target.get("view"));
+        }
+      });
+
+      return layer;
     });
 
-    let view = new ol.View({
-      center: ol.proj.fromLonLat([tileProviders[0].default.longitude, tileProviders[0].default.latitude]),
-      zoom: tileProviders[0].default.zoom
-    });
+    layers[0].set('visible', true);
 
-    let map = new ol.Map({
+    map = new ol.Map({
       layers: layers,
       target: 'map',
-      view: view
+      view: layers[0].get('view')
     });
-
     let layerSwitcher = new ol.control.LayerSwitcher();
     map.addControl(layerSwitcher);
-  };
+  }
 }
 </script>
 </body>
