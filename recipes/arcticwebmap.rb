@@ -178,6 +178,7 @@ post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/arcticweb
 maps_server_execute "VACUUM FULL VERBOSE ANALYZE" do
   cluster "11/main"
   database awm_settings[:database_name]
+  timeout 86400
   not_if { ::File.exists?(post_import_vacuum_file) }
 end
 
@@ -272,6 +273,7 @@ awm_indexes_file = "#{node[:maps_server][:data_prefix]}/extract/arcticwebmap-ind
 maps_server_execute "#{awm_path}/openstreetmap-carto/indexes.sql" do
   cluster "11/main"
   database awm_settings[:database_name]
+  timeout 86400
   not_if { ::File.exists?(awm_indexes_file) }
 end
 

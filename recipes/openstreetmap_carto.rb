@@ -175,6 +175,7 @@ post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/openstree
 maps_server_execute "VACUUM FULL VERBOSE ANALYZE" do
   cluster "11/main"
   database carto_settings[:database_name]
+  timeout 86400
   not_if { ::File.exists?(post_import_vacuum_file) }
 end
 
@@ -321,6 +322,7 @@ osm_carto_indexes_file = "#{node[:maps_server][:data_prefix]}/extract/openstreet
 maps_server_execute "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/indexes.sql" do
   cluster "11/main"
   database carto_settings[:database_name]
+  timeout 86400
   not_if { ::File.exists?(osm_carto_indexes_file) }
 end
 
