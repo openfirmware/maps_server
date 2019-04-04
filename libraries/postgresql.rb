@@ -60,9 +60,10 @@ module OpenStreetMap
       # Get the user and group to run as
       user = options[:user] || "postgres"
       group = options[:group] || "postgres"
+      timeout = options[:timeout] || 3600
 
       # Run the command
-      shell_out!("/usr/bin/psql", *args, :user => user, :group => group)
+      shell_out!("/usr/bin/psql", *args, :user => user, :group => group, :timeout => timeout)
     end
 
     def query(sql, options = {})

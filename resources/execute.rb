@@ -43,7 +43,6 @@ action :run do
     else
       cluster.execute(options.merge(:command => new_resource.command))
     end
-    timeout new_resource.timeout
   end
 end
 
