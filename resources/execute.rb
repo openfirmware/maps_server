@@ -22,6 +22,7 @@ default_action :run
 property :command, :kind_of => String, :name_attribute => true
 property :cluster, :kind_of => String, :required => true
 property :database, :kind_of => String, :required => true
+property :timeout, :kind_of => Integer, :default => 3600
 property :user, :default => "postgres"
 property :group, :default => "postgres"
 
