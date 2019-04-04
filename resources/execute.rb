@@ -30,7 +30,12 @@ action :nothing do
 end
 
 action :run do
-  options = { :database => new_resource.database, :user => new_resource.user, :group => new_resource.group }
+  options = {
+    :database => new_resource.database,
+    :user => new_resource.user,
+    :group => new_resource.group,
+    :timeout => new_resource.timeout
+  }
 
   converge_by "execute #{new_resource.command}" do
     if ::File.exist?(new_resource.command)
@@ -38,6 +43,7 @@ action :run do
     else
       cluster.execute(options.merge(:command => new_resource.command))
     end
+    timeout new_resource.timeout
   end
 end
 
