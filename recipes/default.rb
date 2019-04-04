@@ -76,9 +76,17 @@ end
 # install scripts.
 package %w(liblwgeom-dev)
 
+ruby_block "Store libspatialite build flag" do
+  block do
+    node.normal[:postgresql][:built_libspatialite] = true
+  end
+  not_if { node[:postgresql][:built_libspatialite] }
+  action :nothing
+end
+
 bash "custom install libspatialite-dev" do
   code <<-EOH
-  apt-get build-dep libspatialite-dev
+  apt-get build-dep -y libspatialite-dev
   apt-get source libspatialite-dev
   cd spatialite-*
   sed -i 's/--enable-lwgeom=no/--enable-lwgeom=yes/g' debian/rules
@@ -88,13 +96,7 @@ bash "custom install libspatialite-dev" do
   EOH
   cwd "/usr/local/src"
   not_if { node[:maps_server][:built_libspatialite] }
-end
-
-ruby_block "Store libspatialite build flag" do
-  block do
-    node.normal[:postgresql][:built_libspatialite] = true
-  end
-  not_if { node[:postgresql][:built_libspatialite] }
+  notifies :run, "ruby_block[Store libspatialite build flag]", :immediate
 end
 
 package %w(gdal-bin gdal-data libgdal-dev libgdal20)
