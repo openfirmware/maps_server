@@ -222,6 +222,7 @@ end
 directory "#{awm_path}/openstreetmap-carto/data/awm" do
   owner node[:maps_server][:render_user]
   recursive true
+  owner node[:maps_server][:render_user]
   action :create
 end
 
