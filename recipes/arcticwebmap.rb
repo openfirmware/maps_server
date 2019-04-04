@@ -244,6 +244,7 @@ execute "install shapefiles/rasters" do
     NPM_CONFIG_TMP: "/home/#{node[:maps_server][:render_user]}/tmp"
   )
   user node[:maps_server][:render_user]
+  timeout 3600
 end
 
 # create link for shapefile/raster data to be accessible by XML stylesheet
