@@ -222,7 +222,6 @@ end
 directory "#{awm_path}/openstreetmap-carto/data/awm" do
   owner node[:maps_server][:render_user]
   recursive true
-  owner node[:maps_server][:render_user]
   action :create
 end
 
@@ -239,11 +238,13 @@ end
 # create link for shapefile/raster data to be accessible by XML stylesheet
 link "#{awm_path}/data" do
   to "#{awm_path}/openstreetmap-carto/data"
+  owner node[:maps_server][:render_user]
 end
 
 # create link for symbol data to be accessible by XML stylesheet
 link "#{awm_path}/symbols" do
   to "#{awm_path}/openstreetmap-carto/symbols"
+  owner node[:maps_server][:render_user]
 end
 
 # Install fonts for stylesheet
