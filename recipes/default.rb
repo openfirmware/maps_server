@@ -44,6 +44,14 @@ template "/etc/postgresql/11/main/postgresql.conf" do
   mode 0o644
   variables(settings: node[:postgresql][:settings][:defaults])
   notifies :reload, "service[postgresql]"
+  not_if { node[:postgresql][:configured] }
+end
+
+ruby_block "Store configuration flag" do
+  block do
+    node.normal[:postgresql][:configured] = true
+  end
+  not_if { node[:postgresql][:configured] }
 end
 
 directory node[:postgresql][:settings][:defaults][:data_directory] do
@@ -79,10 +87,15 @@ bash "custom install libspatialite-dev" do
   apt-get install -f
   EOH
   cwd "/usr/local/src"
-  not_if { node.normal["maps_server"]["built_libspatialite"] }
+  not_if { node[:maps_server][:built_libspatialite] }
 end
 
-node.normal["maps_server"]["built_libspatialite"] = true
+ruby_block "Store libspatialite build flag" do
+  block do
+    node.normal[:postgresql][:built_libspatialite] = true
+  end
+  not_if { node[:postgresql][:built_libspatialite] }
+end
 
 package %w(gdal-bin gdal-data libgdal-dev libgdal20)
 

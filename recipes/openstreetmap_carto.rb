@@ -73,16 +73,19 @@ carto_settings[:extracts].each do |extract|
   end
 end
 
-# Optimize PostgreSQL for Imports
+# Optimize PostgreSQL for Imports.
+# Only activate this configuration if osm2pgsql runs.
 import_conf = node[:postgresql][:settings][:defaults].merge(node[:postgresql][:settings][:import])
 
-template "/etc/postgresql/11/main/postgresql.conf" do
+template "import-configuration" do
+  path "/etc/postgresql/11/main/postgresql.conf"
   source "postgresql.conf.erb"
   owner "postgres"
   group "postgres"
   mode 0o644
   variables(settings: import_conf)
   notifies :reload, "service[postgresql]"
+  action :nothing
 end
 
 # Create database user for rendering
@@ -155,9 +158,8 @@ execute "import extract" do
   live_stream true
   user "root"
   timeout 86400
-  not_if { 
-    ::File.exists?(last_import_file)
-  }
+  notifies :create, 'template[import-configuration]', :before
+  not_if { ::File.exists?(last_import_file) }
 end
 
 # Clean up the database by running a PostgreSQL VACUUM and ANALYZE.
@@ -185,7 +187,8 @@ end
 # Optimize PostgreSQL for tile serving
 rendering_conf = node[:postgresql][:settings][:defaults].merge(node[:postgresql][:settings][:tiles])
 
-template "/etc/postgresql/11/main/postgresql.conf" do
+template "tiles-configuration" do
+  path "/etc/postgresql/11/main/postgresql.conf"
   source "postgresql.conf.erb"
   variables(settings: rendering_conf)
   notifies :reload, "service[postgresql]", :immediate
