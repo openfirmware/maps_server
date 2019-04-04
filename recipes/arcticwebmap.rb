@@ -219,6 +219,17 @@ execute "install packages for stylesheet" do
   not_if { ::Dir.exists?("#{awm_path}/node_modules") }
 end
 
+# Create data directory inside openstreetmap-carto, as it does not
+# automatically exist because of .gitignore
+directory "#{awm_path}/openstreetmap-carto/data" do
+  owner node[:maps_server][:render_user]
+  recursive true
+  action :create
+end
+
+# Create directory to store transformed vector/raster data. (A separate
+# directory resource is required as "recursive" only applies ownership
+# to the final directory.)
 directory "#{awm_path}/openstreetmap-carto/data/awm" do
   owner node[:maps_server][:render_user]
   recursive true
