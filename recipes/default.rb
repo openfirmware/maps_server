@@ -79,7 +79,10 @@ bash "custom install libspatialite-dev" do
   apt-get install -f
   EOH
   cwd "/usr/local/src"
+  not_if { node.normal["maps_server"]["built_libspatialite"] }
 end
+
+node.normal["maps_server"]["built_libspatialite"] = true
 
 package %w(gdal-bin gdal-data libgdal-dev libgdal20)
 
