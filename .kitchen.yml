@@ -33,7 +33,8 @@ suites:
       - recipe[maps_server::base_monitoring]
       - recipe[maps_server::default]
       - recipe[maps_server::openstreetmap_carto]
-      # - recipe[maps_server::monitoring]
+      - recipe[maps_server::arcticwebmap]
+      - recipe[maps_server::monitoring]
     verifier:
       inspec_tests:
         - test/integration/default
