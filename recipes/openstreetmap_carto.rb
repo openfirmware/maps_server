@@ -401,7 +401,7 @@ template "/usr/local/etc/renderd.conf" do
     tile_dir: "/srv/tiles", 
     plugins_dir: "/usr/lib/mapnik/3.0/input",
     font_dir: "/usr/share/fonts",
-    configurations: node.normal[:renderd][:stylesheets].values
+    configurations: node[:renderd][:stylesheets].values
   )
   notifies :restart, "service[renderd]", :immediate
 end
@@ -462,7 +462,7 @@ node.normal[:maps_server][:tile_providers][:openstreetmap_carto] = {
 
 # Tile provider configuration file for Leaflet and OpenLayers
 file "/var/www/html/tiles.json" do
-  content JSON.pretty_generate(node.normal[:maps_server][:tile_providers].values)
+  content JSON.pretty_generate(node[:maps_server][:tile_providers].values)
 end
 
 # Deploy a static website with Leaflet for browsing the raster tiles
