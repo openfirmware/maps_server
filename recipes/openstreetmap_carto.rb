@@ -339,14 +339,12 @@ package %w(nodejs npm)
 # Update NPM
 execute "Update npm" do
   command "npm i -g npm"
-  user node[:maps_server][:render_user]
   only_if "npm -v | grep -E '^[345]'"
 end
 
 # Install carto
 execute "Install carto" do
   command "npm i -g carto"
-  user node[:maps_server][:render_user]
   not_if "which carto"
 end
 
