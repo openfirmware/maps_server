@@ -401,7 +401,7 @@ template "/usr/local/etc/renderd.conf" do
     font_dir: "/usr/share/fonts",
     configurations: node[:renderd][:stylesheets].values
   )
-  notifies :restart, "service[renderd]", :immediate
+  notifies :restart, "service[renderd]"
 end
 
 # Install Apache mod_tile loader
