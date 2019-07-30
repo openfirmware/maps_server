@@ -97,6 +97,12 @@ Installs the munin/rrdtool/Apache 2 monitoring stack. This recipe is meant to be
 
 For PostgreSQL and `mod_tile` monitoring plugins, use the `monitoring` recipe.
 
+### `mapproxy` Recipe
+
+Installs MapProxy for serving Mapnik stylesheets via WMS, WMS-C, and/or WMTS. Must be ran *after* setting up PostgreSQL and Mapnik using `openstreetmap_carto` or `arcticwebmap`, as this recipe depends on the import and stylesheets already existing.
+
+TODO: Support attributes, automatic generation of MapProxy configuration, auto-starting MapProxy server
+
 ### `monitoring` Recipe
 
 Runs the `base_monitoring` recipe, then installs custom Munin plugins to collect statistics from PostgreSQL and `mod_tile`.
