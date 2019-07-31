@@ -424,7 +424,7 @@ end
 
 # Create apache virtualhost for tile server
 template "/etc/apache2/sites-available/tileserver.conf" do
-  source "tileserver.conf.erb"
+  source "apache/tileserver.conf.erb"
 end
 
 execute "enable tileserver apache site" do

@@ -44,7 +44,7 @@ end
 configuration_path = "#{mapproxy_home}/mapproxy.yaml"
 
 # template configuration_path do
-#   source "mapproxy.yaml.erb"
+#   source "mapproxy/config.yaml.erb"
 #   mode "755"
 # end
 
@@ -61,7 +61,7 @@ end
 server_path = "#{mapproxy_home}/server.py"
 
 template server_path do
-  source "mapproxy-server.py.erb"
+  source "mapproxy/server.py.erb"
   variables({
     configuration_path: configuration_path
   })

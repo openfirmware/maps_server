@@ -43,7 +43,7 @@ template "/etc/munin/munin.conf" do
 end
 
 template '/etc/apache2/sites-available/munin.conf' do
-  source 'apache-munin.conf.erb'
+  source 'apache/munin.conf.erb'
 end
 
 %w(fcgid rewrite headers).each do |apache_module|
