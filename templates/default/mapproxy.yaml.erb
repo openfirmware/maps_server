@@ -1,0 +1,53 @@
+# MapProxy Configuration
+# Managed by Chef
+
+services:
+  demo:
+  wmts:
+  wms:
+    attribution:
+      text: "Map © ArcticConnect, Data © OpenStreetMap Contributors"
+    srs: ['EPSG:3857', 'EPSG:3573']
+    md:
+      title: ArcticConnect OWS
+      abstract: ArcticWebMap tiles via WMS/WMTS.
+      online_resource: https://webmap.arcticconnect.ca/
+      contact:
+        person: James Badger
+        position: Research Associate
+        organization: GeoSensorWeb Lab
+        address: 2500 University Drive NW
+        city: Calgary
+        postcode: T2N1N4
+        state: Alberta
+        country: Canada
+        email: jpbadger@ucalgary.ca
+      access_constraints: Map tiles are free to use with attribution.
+      fees: 'None'
+
+layers:
+  # - name: awm2
+  #   title: ArcticWebMap v2.0 for EPSG:3573
+  #   sources: [awm_cache]
+
+
+caches:
+  # awm_cache:
+  #   grids: [laea3573]
+  #   sources: [awm2_mapnik]
+  #   cache:
+  #     type: file
+  #     directory: /srv/tiles/proxy_cache_awm
+
+sources:
+  # awm2_mapnik:
+  #   type: mapnik
+  #   mapfile: /srv/stylesheets/arcticwebmap/arcticwebmap.xml
+
+grids:
+    # laea3573:
+    #     srs: EPSG:3573
+    #     bbox: [-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892]
+    #     bbox_srs: EPSG:3573
+
+globals:

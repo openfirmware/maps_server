@@ -1,0 +1,11 @@
+<VirtualHost *:80>
+    ServerName localhost
+    
+    WSGIScriptAlias /mapproxy <%= @server_path %>
+    WSGIDaemonProcess mapproxy user=<%= @user %> group=<%= @group %> processes=2 threads=10
+
+    <Directory <%= @mapproxy_path %>>
+      Order deny,allow
+      Require all granted
+    </Directory>
+</VirtualHost>

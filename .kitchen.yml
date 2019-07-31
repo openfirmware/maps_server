@@ -37,6 +37,7 @@ suites:
       - recipe[maps_server::openstreetmap_carto]
       - recipe[maps_server::arcticwebmap]
       - recipe[maps_server::monitoring]
+      - recipe[maps_server::mapproxy]
     verifier:
       inspec_tests:
         - test/integration/default

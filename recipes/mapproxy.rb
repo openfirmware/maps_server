@@ -4,8 +4,18 @@
 #
 # Copyright:: 2019, James Badger, Apache-2.0 License.
 
+###################
+# 1. Install Apache
+###################
+package %w(apache2 apache2-dev)
+
+service "apache2" do
+  action :nothing
+end
+
+
 #####################
-# 1. Install Packages
+# 2. Install MapProxy
 #####################
 package %w(python-pip python-pil python-yaml python-mapnik libproj12 libproj-dev)
 
@@ -29,4 +39,47 @@ end
 execute "install mapproxy from source" do
   command "make install"
   cwd "#{mapproxy_home}/src"
+end
+
+configuration_path = "#{mapproxy_home}/mapproxy.yaml"
+
+# template configuration_path do
+#   source "mapproxy.yaml.erb"
+#   mode "755"
+# end
+
+###########################
+# 3. Set up MapProxy Server
+###########################
+
+package %w(libapache2-mod-wsgi)
+
+execute "enable mod_wsgi" do
+  command "a2enmod wsgi"
+end
+
+server_path = "#{mapproxy_home}/server.py"
+
+template server_path do
+  source "mapproxy-server.py.erb"
+  variables({
+    configuration_path: configuration_path
+  })
+end
+
+# Create apache virtualhost for tile server
+template "/etc/apache2/sites-available/mapproxy.conf" do
+  source "apache/mapproxy.conf.erb"
+  variables({
+    mapproxy_path: mapproxy_home,
+    server_path: server_path,
+    user: node[:maps_server][:render_user],
+    group: node[:maps_server][:render_user]
+  })
+end
+
+execute "enable mapproxy apache site" do
+  command "a2ensite mapproxy"
+  not_if { ::File.exists?("/etc/apache2/sites-enabled/mapproxy.conf") }
+  notifies :reload, "service[apache2]"
 end
