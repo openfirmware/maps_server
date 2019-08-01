@@ -32,8 +32,8 @@ end
 # If a new MapProxy Python package is released, this block can be 
 # changed to a pip install resource instead.
 git "#{mapproxy_home}/src" do
-  repository "https://github.com/mapproxy/mapproxy"
-  reference "master"
+  repository node[:mapproxy][:repository]
+  reference node[:mapproxy][:reference]
 end
 
 execute "install mapproxy from source" do
@@ -43,10 +43,17 @@ end
 
 configuration_path = "#{mapproxy_home}/mapproxy.yaml"
 
-# template configuration_path do
-#   source "mapproxy/config.yaml.erb"
-#   mode "755"
-# end
+# Note that the attributes hash has to be converted to a Hash in the
+# recipe and not the template, or else Ruby Mash (Hash variant) will
+# leak into the YAML and MapProxy will fail to read the configuration.
+template configuration_path do
+  source "mapproxy/config.yaml.erb"
+  mode "755"
+  variables({
+    config: node[:mapproxy][:config].to_hash
+  })
+  notifies :reload, "service[apache2]"
+end
 
 ###########################
 # 3. Set up MapProxy Server
