@@ -36,7 +36,7 @@ default[:postgresql][:settings][:tiles][:checkpoint_completion_target] = 0.9
 default[:postgresql][:settings][:tiles][:random_page_cost] = 1.1
 
 # See https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server
-default[:postgresql][:settings][:tiles][:effective_cache_size] = "36GB"
+default[:postgresql][:settings][:tiles][:effective_cache_size] = "18GB"
 
 # Larger values help query planning
 default[:postgresql][:settings][:tiles][:default_statistics_target] = 500
