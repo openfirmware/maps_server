@@ -101,7 +101,11 @@ For PostgreSQL and `mod_tile` monitoring plugins, use the `monitoring` recipe.
 
 Installs MapProxy for serving Mapnik stylesheets via WMS, WMS-C, and/or WMTS. Must be ran *after* setting up PostgreSQL and Mapnik using `openstreetmap_carto` or `arcticwebmap`, as this recipe depends on the import and stylesheets already existing.
 
-TODO: Support attributes, automatic generation of MapProxy configuration, auto-starting MapProxy server
+The recipe will install Apache2 if it hasn't already been installed, and set up the WSCGI module for serving the MapProxy python application at the HTTP path `/mapproxy`.
+
+Configuration of services, layers, caches, sources, and grids are all handled in `attributes/mapproxy.rb`. A complete example is included in that attributes file.
+
+A demo site using OpenLayers for previewing the WMS/WMTS is enabled at `/mapproxy/demo`. The demo can be disabled in the MapProxy configuration.
 
 ### `monitoring` Recipe
 
