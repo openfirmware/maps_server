@@ -63,6 +63,23 @@ node[:mapproxy][:caches].each do |key, value|
   end
 end
 
+service "postgresql" do
+  action :nothing
+end
+
+# Enable access for Apache to OSM data for rendering.
+# As Apache is NOT run as root, it cannot run MapProxy as the render
+# user. So instead we grant database access to the AWM database for
+# Apache.
+maps_server_user "www-data" do
+  cluster "11/main"
+end
+
+maps_server_execute "GRANT #{node[:maps_server][:render_user]} TO \"www-data\"" do
+  cluster "11/main"
+  database node[:maps_server][:arcticwebmap][:database_name]
+end
+
 ###########################
 # 3. Set up MapProxy Server
 ###########################
