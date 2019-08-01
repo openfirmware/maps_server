@@ -22,7 +22,6 @@ package %w(python-pip python-pil python-yaml python-mapnik libproj12 libproj-dev
 mapproxy_home = "#{node[:maps_server][:software_prefix]}/mapproxy"
 
 directory mapproxy_home do
-  owner node[:maps_server][:render_user]
   recursive true
   action :create
 end
@@ -55,6 +54,15 @@ template configuration_path do
   notifies :reload, "service[apache2]"
 end
 
+# Create Cache Directories
+node[:mapproxy][:caches].each do |key, value|
+  directory value do
+    owner 'www-data'
+    recursive true
+    action :create
+  end
+end
+
 ###########################
 # 3. Set up MapProxy Server
 ###########################
@@ -79,9 +87,7 @@ template "/etc/apache2/sites-available/mapproxy.conf" do
   source "apache/mapproxy.conf.erb"
   variables({
     mapproxy_path: mapproxy_home,
-    server_path: server_path,
-    user: node[:maps_server][:render_user],
-    group: node[:maps_server][:render_user]
+    server_path: server_path
   })
 end
 

@@ -4,6 +4,8 @@
 default[:mapproxy][:repository] = "https://github.com/mapproxy/mapproxy"
 default[:mapproxy][:reference] = "master"
 
+default[:mapproxy][:caches][:awm] = "/srv/tiles/proxy_cache_awm"
+
 # default[:mapproxy][:config] is directly converted into YAML for the 
 # configuration. It follows the same structure as the official MapProxy
 # config: https://mapproxy.org/docs/1.11.0/configuration.html
@@ -49,7 +51,7 @@ default[:mapproxy][:config][:caches] = {
     sources: ["awm2_mapnik"],
     cache: {
       type: "file",
-      directory: "/srv/tiles/proxy_cache_awm"
+      directory: "#{node[:mapproxy][:caches][:awm]}"
     }
   }
 }
