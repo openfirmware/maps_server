@@ -278,7 +278,7 @@ shapefiles = [{
   url: "https://osmdata.openstreetmap.de/download/simplified-land-polygons-complete-3857.zip"
 },{
   check: "#{osm_carto_path}/data/ne_110m_admin_0_boundary_lines_land/ne_110m_admin_0_boundary_lines_land.shp",
-  url: "http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_boundary_lines_land.zip"
+  url: "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_boundary_lines_land.zip"
 }, {
   check: "#{osm_carto_path}/data/land-polygons-split-3857/land_polygons.shp",
   url: "https://osmdata.openstreetmap.de/download/land-polygons-split-3857.zip"
