@@ -122,3 +122,8 @@ execute "enable mapproxy apache site" do
   not_if { ::File.exists?("/etc/apache2/sites-enabled/mapproxy.conf") }
   notifies :reload, "service[apache2]"
 end
+
+execute "enable mod_deflate" do
+  command "a2enmod deflate"
+  notifies :reload, "service[apache2]"
+end

@@ -12,5 +12,6 @@
     <Directory <%= @tiles_path %>>
     	Require all granted
     	Options +Indexes
+        SetOutputFilter DEFLATE
     </Directory>
 </VirtualHost>
