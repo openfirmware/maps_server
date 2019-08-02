@@ -57,7 +57,8 @@ end
 # Create Cache Directories
 node[:mapproxy][:caches].each do |key, value|
   directory value do
-    owner 'www-data'
+    owner "www-data"
+    group "www-data"
     recursive true
     action :create
   end
@@ -104,8 +105,10 @@ template "/etc/apache2/sites-available/mapproxy.conf" do
   source "apache/mapproxy.conf.erb"
   variables({
     mapproxy_path: mapproxy_home,
-    server_path: server_path
+    server_path: server_path,
+    tiles_path: "/srv/tiles/mapproxy"
   })
+  notifies :reload, "service[apache2]"
 end
 
 execute "enable mapproxy apache site" do

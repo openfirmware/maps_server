@@ -4,7 +4,13 @@
     WSGIScriptAlias /mapproxy <%= @server_path %>
 
     <Directory <%= @mapproxy_path %>>
-      Order deny,allow
-      Require all granted
+      Require all denied
+    </Directory>
+
+    # Directory Listing for GeoPackage files
+    Alias /tiles <%= @tiles_path %>
+    <Directory <%= @tiles_path %>>
+    	Require all granted
+    	Options +Indexes
     </Directory>
 </VirtualHost>

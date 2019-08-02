@@ -4,7 +4,10 @@
 default[:mapproxy][:repository] = "https://github.com/mapproxy/mapproxy"
 default[:mapproxy][:reference] = "master"
 
+# These directories will be created if they do not exist, and ownership
+# given to `www-data` so that MapProxy can write caches to them.
 default[:mapproxy][:caches][:awm] = "/srv/tiles/proxy_cache_awm"
+default[:mapproxy][:caches][:awm_gpkg] = "/srv/tiles/mapproxy"
 
 # default[:mapproxy][:config] is directly converted into YAML for the 
 # configuration. It follows the same structure as the official MapProxy
@@ -60,7 +63,8 @@ default[:mapproxy][:config][:caches] = {
     sources: ["awm2_mapnik"],
     cache: {
       type: "geopackage",
-      directory: "/var/www/html"
+      levels: true,
+      directory: "#{node[:mapproxy][:caches][:awm_gpkg]}"
     }
   }
 }
