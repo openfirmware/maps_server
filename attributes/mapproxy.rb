@@ -17,7 +17,7 @@ default[:mapproxy][:config][:services] = {
     attribution: {
       text: "Map Copyright ArcticConnect, Data Copyright OpenStreetMap Contributors"
     },
-    srs: ['EPSG:3573'],
+    srs: ["EPSG:3573"],
     md: {
       title: "ArcticConnect OWS",
       abstract: "ArcticWebMap tiles via WMS/WMTS.",
@@ -42,7 +42,7 @@ default[:mapproxy][:config][:services] = {
 default[:mapproxy][:config][:layers] = [{
   name: "awm2",
   title: "ArcticWebMap v2.0 for EPSG:3573",
-  sources: ["awm_cache"]
+  sources: ["awm_cache", "awm_gpkg"]
 }]
 
 default[:mapproxy][:config][:caches] = {
@@ -52,6 +52,15 @@ default[:mapproxy][:config][:caches] = {
     cache: {
       type: "file",
       directory: "#{node[:mapproxy][:caches][:awm]}"
+    }
+  },
+  # Generate GeoPackage and make it publicly available
+  awm_gpkg: {
+    grids: ["laea3573"],
+    sources: ["awm2_mapnik"],
+    cache: {
+      type: "geopackage",
+      directory: "/var/www/html"
     }
   }
 }
