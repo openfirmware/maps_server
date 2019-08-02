@@ -45,7 +45,7 @@ default[:mapproxy][:config][:services] = {
 default[:mapproxy][:config][:layers] = [{
   name: "awm2",
   title: "ArcticWebMap v2.0 for EPSG:3573",
-  sources: ["awm_cache", "awm_gpkg"]
+  sources: ["awm_cache", "awm_gpkg", "awm_gpkg_single"]
 }]
 
 default[:mapproxy][:config][:caches] = {
@@ -65,6 +65,17 @@ default[:mapproxy][:config][:caches] = {
       type: "geopackage",
       levels: true,
       directory: "#{node[:mapproxy][:caches][:awm_gpkg]}"
+    }
+  },
+
+  # Generate GeoPackage and make it publicly available
+  awm_gpkg_single: {
+    grids: ["laea3573"],
+    sources: ["awm2_mapnik"],
+    cache: {
+      type: "geopackage",
+      levels: false,
+      filename: "#{node[:mapproxy][:caches][:awm_gpkg]}/laea3573.gpkg"
     }
   }
 }
