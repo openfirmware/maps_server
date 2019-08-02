@@ -67,7 +67,8 @@ default[:mapproxy][:config][:grids] = {
   laea3573: {
     srs: "EPSG:3573",
     bbox: [-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892],
-    bbox_srs: "EPSG:3573"
+    bbox_srs: "EPSG:3573",
+    origin: "ul"
   }
 }
 
