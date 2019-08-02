@@ -54,6 +54,12 @@ template configuration_path do
   notifies :reload, "service[apache2]"
 end
 
+# Deploy a sample Seeding file. Will need to be edited on the server.
+template "#{mapproxy_home}/seed.yaml" do
+  source "mapproxy/seed.yaml.erb"
+  mode "755"
+end
+
 # Create Cache Directories
 node[:mapproxy][:caches].each do |key, value|
   directory value do
