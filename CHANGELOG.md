@@ -2,6 +2,22 @@
 
 This file is used to list changes made in each version of the maps\_server cookbook.
 
+# 0.3.0
+
+"MapProxy" release.
+
+* Fix for reading wrong attribute level
+* Auto-accept Chef license when setting up Test Kitchen VMs
+* Update OSM shapefile download URLs to new host
+* Fix for NPM using wrong system user
+* Fix failure where renderd is restarted too quickly
+* Add recipe for installing MapProxy
+* Automatically configure Apache to serve MapProxy
+* Add `www-data` as a database user for MapProxy usage
+* Build tile caches to GeoPackages for easier re-use
+* Provide some sample MapProxy seed configuration
+* Enable gzip compression for downloading tile cache GeoPackages
+
 # 0.2.0
 
 "ArcticWebMap" release.
