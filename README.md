@@ -107,6 +107,18 @@ Configuration of services, layers, caches, sources, and grids are all handled in
 
 A demo site using OpenLayers for previewing the WMS/WMTS is enabled at `/mapproxy/demo`. The demo can be disabled in the MapProxy configuration.
 
+MapProxy tiles should be generated in one or more caches in `/srv/tiles/mapproxy`, and Apache is set to serve that directory for public download of tile caches. Gzip compression is enabled for download of GeoPackages as it has a significant effect on the file size.
+
+For seeding tiles, the following command is recommended to be ran manually:
+
+```
+$ sudo -u www-data mapproxy-seed --seed-conf=/opt/mapproxy/seed.yaml \
+  --proxy-conf=/opt/mapproxy/mapproxy.yaml \
+  --concurrency 6 -i
+```
+
+Adjust the concurrency for your instance.
+
 ### `monitoring` Recipe
 
 Runs the `base_monitoring` recipe, then installs custom Munin plugins to collect statistics from PostgreSQL and `mod_tile`.

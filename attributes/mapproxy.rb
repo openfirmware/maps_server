@@ -6,7 +6,6 @@ default[:mapproxy][:reference] = "master"
 
 # These directories will be created if they do not exist, and ownership
 # given to `www-data` so that MapProxy can write caches to them.
-default[:mapproxy][:caches][:awm] = "/srv/tiles/proxy_cache_awm"
 default[:mapproxy][:caches][:awm_gpkg] = "/srv/tiles/mapproxy"
 
 # default[:mapproxy][:config] is directly converted into YAML for the 
@@ -45,18 +44,10 @@ default[:mapproxy][:config][:services] = {
 default[:mapproxy][:config][:layers] = [{
   name: "awm2",
   title: "ArcticWebMap v2.0 for EPSG:3573",
-  sources: ["awm_cache", "awm_gpkg", "awm_gpkg_single"]
+  sources: ["awm_gpkg", "awm_gpkg_single"]
 }]
 
 default[:mapproxy][:config][:caches] = {
-  awm_cache: {
-    grids: ["laea3573"],
-    sources: ["awm2_mapnik"],
-    cache: {
-      type: "file",
-      directory: "#{node[:mapproxy][:caches][:awm]}"
-    }
-  },
   # Generate GeoPackage and make it publicly available
   awm_gpkg: {
     grids: ["laea3573"],
