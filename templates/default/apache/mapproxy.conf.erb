@@ -1,17 +1,13 @@
-<VirtualHost *:80>
-    ServerName localhost
-    
-    WSGIScriptAlias /mapproxy <%= @server_path %>
+WSGIScriptAlias /mapproxy <%= @server_path %>
 
-    <Directory <%= @mapproxy_path %>>
-      Require all granted
-    </Directory>
+<Directory <%= @mapproxy_path %>>
+  Require all granted
+</Directory>
 
-    # Directory Listing for GeoPackage files
-    Alias /tiles <%= @tiles_path %>
-    <Directory <%= @tiles_path %>>
-    	Require all granted
-    	Options +Indexes
-        SetOutputFilter DEFLATE
-    </Directory>
-</VirtualHost>
+# Directory Listing for GeoPackage files
+Alias /tiles <%= @tiles_path %>
+<Directory <%= @tiles_path %>>
+    Require all granted
+    Options +Indexes
+    SetOutputFilter DEFLATE
+</Directory>
