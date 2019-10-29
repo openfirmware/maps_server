@@ -44,7 +44,9 @@ default[:mapproxy][:config][:services] = {
 default[:mapproxy][:config][:layers] = [{
   name: "awm2",
   title: "ArcticWebMap v2.0 for EPSG:3573",
-  sources: ["awm_gpkg", "awm_gpkg_single"]
+  # Please note that specifying more than one cache source disables WMTS
+  # in MapProxy. To update all the caches, use the seeding tool instead.
+  sources: ["awm_gpkg"]
 }]
 
 default[:mapproxy][:config][:caches] = {
@@ -59,7 +61,8 @@ default[:mapproxy][:config][:caches] = {
     }
   },
 
-  # Generate GeoPackage and make it publicly available
+  # Generate GeoPackage and make it publicly available. This is a single
+  # GeoPackage file containing all the zoom levels.
   awm_gpkg_single: {
     grids: ["laea3573"],
     sources: ["awm2_mapnik"],
