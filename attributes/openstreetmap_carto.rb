@@ -56,3 +56,19 @@ default[:maps_server][:openstreetmap_carto][:import_procs] = 12
 default[:maps_server][:openstreetmap_carto][:latitude] = 51.0452
 default[:maps_server][:openstreetmap_carto][:longitude] = -114.0625
 default[:maps_server][:openstreetmap_carto][:zoom] = 4
+
+###########################
+## Monitoring Configuration
+###########################
+# Be sure to concatenate to merge with other stylesheets
+default[:maps_server][:munin_planet_age][:files] += [{
+  label:     "osm-extract",
+  name:      "/srv/data/extract/openstreetmap-carto-merged.pbf",
+  title:     "OpenStreetMap Extract",
+  # Measure extract age in years instead of seconds
+  frequency: 365 * 24 * 60 * 60,
+  # Warn at 1.05 years old
+  warning:   1.05,
+  # Critical warn at 1.1 years old
+  critical:  1.1
+}]

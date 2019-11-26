@@ -53,3 +53,19 @@ default[:maps_server][:arcticwebmap][:import_procs] = 8
 default[:maps_server][:arcticwebmap][:latitude] = 71
 default[:maps_server][:arcticwebmap][:longitude] = -82
 default[:maps_server][:arcticwebmap][:zoom] = 5
+
+###########################
+## Monitoring Configuration
+###########################
+# Be sure to concatenate to merge with other stylesheets
+default[:maps_server][:munin_planet_age][:files] += [{
+  label:     "awm-extract",
+  name:      "/srv/data/extract/arcticwebmap-merged.pbf.pbf",
+  title:     "ArcticWebMap Extract",
+  # Measure extract age in years instead of seconds
+  frequency: 365 * 24 * 60 * 60,
+  # Warn at 1.05 years old
+  warning:   1.05,
+  # Critical warn at 1.1 years old
+  critical:  1.1
+}]

@@ -17,3 +17,5 @@ default[:maps_server][:stylesheets_prefix] = "/srv/stylesheets"
 ## Rendering User
 #################
 default[:maps_server][:render_user] = "render"
+
+default[:maps_server][:munin_planet_age][:files] = []

@@ -8,9 +8,12 @@
 # Install plugins to /usr/local/share/munin/plugins/
 plugins_dir = "/usr/local/share/munin/plugins"
 
-cookbook_file "#{plugins_dir}/planet_age" do
-  source 'munin-plugins/planet_age'
+template "#{plugins_dir}/planet_age" do
+  source 'planet_age.erb'
   mode '0755'
+  variables({
+    files: node[:maps_server][:munin_planet_age][:files]
+  })
 end
 
 # Enable plugins by creating links in /etc/munin/plugins/
