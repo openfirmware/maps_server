@@ -60,7 +60,7 @@ default[:maps_server][:arcticwebmap][:zoom] = 5
 # Be sure to concatenate to merge with other stylesheets
 default[:maps_server][:munin_planet_age][:files] += [{
   label:     "awm-extract",
-  name:      "/srv/data/extract/arcticwebmap-merged.pbf.pbf",
+  name:      "/srv/data/extract/arcticwebmap-merged.pbf",
   title:     "ArcticWebMap Extract",
   # Measure extract age in years instead of seconds
   frequency: 365 * 24 * 60 * 60,
