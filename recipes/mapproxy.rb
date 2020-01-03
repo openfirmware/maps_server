@@ -2,7 +2,7 @@
 # Cookbook:: maps_server
 # Recipe:: mapproxy
 #
-# Copyright:: 2019, James Badger, Apache-2.0 License.
+# Copyright:: 2019–2020, James Badger, Apache-2.0 License.
 
 ###################
 # 1. Install Apache

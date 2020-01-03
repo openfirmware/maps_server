@@ -2,7 +2,7 @@
 # Cookbook:: maps_server
 # Recipe:: arcticwebmap
 #
-# Copyright:: 2019, James Badger, Apache-2.0 License.
+# Copyright:: 2019–2020, James Badger, Apache-2.0 License.
 
 awm_settings = node[:maps_server][:arcticwebmap]
 

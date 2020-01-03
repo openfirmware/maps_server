@@ -2,7 +2,7 @@
 # Cookbook:: maps_server
 # Recipe:: monitoring
 #
-# Copyright:: 2018–2019, James Badger, Apache-2.0 License.
+# Copyright:: 2018–2020, James Badger, Apache-2.0 License.
 # With code based on https://github.com/openstreetmap/chef/tree/master/cookbooks/munin
 
 # Install plugins to /usr/local/share/munin/plugins/

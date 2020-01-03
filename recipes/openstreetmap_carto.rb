@@ -2,7 +2,7 @@
 # Cookbook:: maps_server
 # Recipe:: openstreetmap-carto
 #
-# Copyright:: 2018–2019, James Badger, Apache-2.0 License.
+# Copyright:: 2018–2020, James Badger, Apache-2.0 License.
 
 carto_settings = node[:maps_server][:openstreetmap_carto]
 
