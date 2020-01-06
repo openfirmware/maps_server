@@ -62,10 +62,10 @@ default[:maps_server][:munin_planet_age][:files] += [{
   label:     "awm-extract",
   name:      "/srv/data/extract/arcticwebmap-merged.pbf",
   title:     "ArcticWebMap Extract",
-  # Measure extract age in years instead of seconds
-  frequency: 365 * 24 * 60 * 60,
+  # Measure extract age in days instead of seconds
+  frequency: 24 * 60 * 60,
   # Warn at 1.05 years old
-  warning:   1.05,
+  warning:   1.05 * 365,
   # Critical warn at 1.1 years old
-  critical:  1.1
+  critical:  1.1 * 365
 }]
