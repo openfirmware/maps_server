@@ -2,6 +2,17 @@
 
 This file is used to list changes made in each version of the maps\_server cookbook.
 
+# 1.0.0
+
+Stable release.
+
+* Fix issue with MapProxy not being accessible using Apache when using `mod_tile` Tile Server
+* Switch to only a single tile cache for MapProxy, as it does not support multiple caches with WMTS
+* Update Munin plugin for planet age to monitor each database/stylesheet separately
+* Upgrade to use Ruby 2.7.0 for cookbook
+* Unlock Chef gem to allow use of 15 and newer
+* Switch Munin planet age plugin to use days instead of years, as fractions of years are less readable than integer days
+
 # 0.3.0
 
 "MapProxy" release.
@@ -51,3 +62,10 @@ Initial release.
 * Import an OSM extract for Alberta, Canada to the database
 * Set up stylesheet for openstreetmap-carto and mod\_tile
 * Install sample clients with Leaflet and OpenLayers 4
+
+# Road Map
+
+* Switch to PostgreSQL 12
+* Switch to PostGIS 3.0
+
+These upgrades are probably safe on a fresh node with no existing database, but I am not sure about an in-place upgrade from PostgreSQL 11/PostGIS 2.5.

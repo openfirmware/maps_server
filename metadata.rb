@@ -4,7 +4,7 @@ maintainer_email 'james@jamesbadger.ca'
 license 'Apache-2.0'
 description 'Set up self-contained database/tile server'
 long_description 'Set up a self-contained database and tile server for generating raster and vector maps, especially for web clients'
-version '0.3.0'
+version '1.0.0'
 chef_version '>= 14.0'
 
 # The `issues_url` points to the location where issues for this cookbook are
