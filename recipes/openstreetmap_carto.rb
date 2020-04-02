@@ -20,8 +20,9 @@ git osm_carto_path do
   reference carto_settings[:git_ref]
 end
 
+###################
 # Download Extracts
-
+###################
 extract_path = "#{node[:maps_server][:data_prefix]}/extract"
 directory extract_path do
   recursive true
@@ -37,10 +38,11 @@ carto_settings[:extracts].each do |extract|
   extract_file         = "#{extract_path}/#{::File.basename(extract_url)}"
   extract_file_list.push(extract_file)
 
-  # Download the extract
-  # Only runs if a) a downloaded file doesn't exist, 
-  # b) a date requirement for the extract hasn't been set,
-  # c) The remote file is newer than the extract date requirement
+  # Download the OSM Database extract
+  # Only runs if:
+  # a) a downloaded file doesn't exist, OR 
+  # b) a date requirement for the extract has been set AND
+  #    the downloaded file is older than the extract date requirement
   remote_file extract_file do
     source extract_url
     only_if {
@@ -53,6 +55,11 @@ carto_settings[:extracts].each do |extract|
 
   # If there is a checksum URL, download it and validate the extract
   # against the checksum provided by the source. Assumes md5.
+  # Only runs if:
+  # a) a downloaded checksum file doesn't exist, OR 
+  # b) a date requirement for the extract has been set AND
+  #    the downloaded checksum file is older than the extract date 
+  #    requirement
   if !(extract_checksum_url.nil? || extract_checksum_url.empty?)
     extract_checksum_file = "#{extract_path}/#{::File.basename(extract_checksum_url)}"
     remote_file extract_checksum_file do
@@ -73,7 +80,25 @@ carto_settings[:extracts].each do |extract|
   end
 end
 
+# Store the latest extract date from the attributes in a variable. This
+# will be used in later resources to determine if they need to be 
+# re-ran.
+# We use an initial reduce Time instance with value of "2000-01-01" else
+# the reduce loop uses the first value of the array (a Hash) and that
+# fails when it is compared to a Time.
+latest_extract_time = carto_settings[:extracts].reduce(Time.parse("2000-01-01")) do |memo, extract|
+  # Parse the date string into a Time object for comparisons
+  edate =  DateTime.strptime(extract[:extract_date_requirement]).to_time
+  if memo < edate
+    edate
+  else
+    memo
+  end
+end
+
+##################################
 # Optimize PostgreSQL for Imports.
+##################################
 # Only activate this configuration if osm2pgsql runs.
 import_conf = node[:postgresql][:settings][:defaults].merge(node[:postgresql][:settings][:import])
 
@@ -118,6 +143,9 @@ end
   end
 end
 
+###################
+# Import Extract(s)
+###################
 # Join extracts into one large extract file
 package "osmosis"
 
@@ -125,20 +153,37 @@ osmosis_args = extract_file_list.collect { |f| "--read-pbf-fast #{f}" }.join(" "
 osmosis_args += " " + (["--merge"] * (extract_file_list.length - 1)).join(" ")
 merged_extract = "#{extract_path}/openstreetmap-carto-merged.pbf"
 
+# Use `osmosis` tool to combine OSM PBF files, so only a single import
+# using osm2pgsql is needed.
+# Only runs if:
+# a) a merged extract file doesn't exist, OR 
+# b) a date requirement for the extracts has been set AND
+#    the merged extract file is older than the extract date requirement
 execute "combine extracts" do
   command "osmosis #{osmosis_args} --write-pbf \"#{merged_extract}\""
   timeout 3600
-  not_if { ::File.exist?(merged_extract) }
+  only_if {
+    !::File.exists?(merged_extract) ||
+    !latest_extract_time.nil? && ::File.mtime(merged_extract) < latest_extract_time
+  }
 end
 
-# Crop extract to smaller region
+# Crop extract to smaller region, if a bounding box has been defined in
+# the attributes.
 extract_argument = ""
 extract_bounding_box = carto_settings[:crop_bounding_box]
 if !extract_bounding_box.nil? && !extract_bounding_box.empty?
   extract_argument = "--bbox " + extract_bounding_box.join(",")
 end
 
-# Load data into database
+# Load data into database using `osm2pgsql`.
+# A plain text file with the date of last import is used to record the
+# last import time. This is usually bottlenecked by the RAM and disk
+# IO speed.
+# Only runs if:
+# a) a last import file doesn't exist, OR 
+# b) a date requirement for the extract has been set AND
+#    the last import file is older than the extract date requirement
 last_import_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-last-import"
 
 execute "import extract" do
@@ -159,7 +204,10 @@ execute "import extract" do
   user "root"
   timeout 86400
   notifies :create, 'template[import-configuration]', :before
-  not_if { ::File.exists?(last_import_file) }
+  only_if {
+    !::File.exists?(last_import_file) ||
+    !latest_extract_time.nil? && ::File.mtime(last_import_file) < latest_extract_time
+  }
 end
 
 # Clean up the database by running a PostgreSQL VACUUM and ANALYZE.
@@ -167,22 +215,29 @@ end
 # for generating tiles.
 # This should not take very long for small extracts (city/province
 # level). Continent/planet level databases will probably have to
-# increase the timeout.
-# A timestamp file is created after the run, and used to determine if
-# the resource should be re-run.
+# increase the timeout. This is usually bottlenecked by the RAM and disk
+# IO speed.
+# Only runs if:
+# a) a "post-import vacuum" file doesn't exist, OR 
+# b) a date requirement for the extract has been set AND
+#    the "post-import vacuum" file is older than the extract date 
+#    requirement
 post_import_vacuum_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-post-import-vacuum"
+
+# Create the post-import vacuum file by notification
+file post_import_vacuum_file do
+  action :nothing
+end
 
 maps_server_execute "VACUUM FULL VERBOSE ANALYZE" do
   cluster "11/main"
   database carto_settings[:database_name]
   timeout 86400
-  not_if { ::File.exists?(post_import_vacuum_file) }
-end
-
-
-file post_import_vacuum_file do
-  action :touch
-  not_if { ::File.exists?(post_import_vacuum_file) }
+  notifies :touch, "file[#{post_import_vacuum_file}]"
+  only_if {
+    !::File.exists?(post_import_vacuum_file) ||
+    !latest_extract_time.nil? && ::File.mtime(post_import_vacuum_file) < latest_extract_time
+  }
 end
 
 # Optimize PostgreSQL for tile serving
@@ -195,7 +250,9 @@ template "tiles-configuration" do
   notifies :reload, "service[postgresql]", :immediate
 end
 
+############################################
 # Install shapefiles for openstreetmap-carto
+############################################
 package "unzip"
 
 directory "#{osm_carto_path}/data" do
@@ -331,8 +388,9 @@ file osm_carto_indexes_file do
   not_if { ::File.exists?(osm_carto_indexes_file) }
 end
 
+#################################################
 # Set up raster tile rendering for the stylesheet
-
+#################################################
 # Install Node.js for carto
 package %w(nodejs npm)
 

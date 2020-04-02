@@ -127,7 +127,7 @@ Runs the `base_monitoring` recipe, then installs custom Munin plugins to collect
 
 Installs the openstreetmap-carto stylesheet, downloads extracts, sets up the database and database user, imports the data to PostgreSQL, then sets up renderd and Apache. Also installs Leaflet/OpenLayers demo sites to `/leaflet.html` and `/openlayers.html`.
 
-Download/setup/import of the database has been moved to this recipe as different stylesheets may require different import options (projection, regions, etc).
+Download, setup, and import of the database has been moved to this recipe as different stylesheets may require different import options (projection, regions, etc).
 
 * Download [extract of OpenStreetMap data][GeoFabrik]
 * Download [openstreetmap-carto][] for import scripts
@@ -144,6 +144,10 @@ Download/setup/import of the database has been moved to this recipe as different
 * Deploy a static website with [OpenLayers][] for browsing the raster tiles
 
 This recipe can be ran with or without the `arcticwebmap` recipe, they should co-exist as long as they have different data storage paths defined in their attributes.
+
+If the `extract_date_requirement` attribute for an extract defined in `default[:maps_server][:openstreetmap_carto][:extracts]` is updated to a date *after* the creation date of an *existing* downloaded extract file, then it will be re-downloaded from the remote server. This will cause the new downloaded extract file to have a creation date after the date defined in the attributes, so Chef Client will not re-download again until the `extract_date_requirement` is changed again. Setting the `extract_date_requirement` to a date far in the future will always cause the extract to be downloaded from the remote server.
+
+Additionally, updating `extract_date_requirement` for any extract will cause the extracts to be re-imported into PostgreSQL and replace the existing database.
 
 [GeoFabrik]: http://download.geofabrik.de
 [Leaflet]: https://leafletjs.com
