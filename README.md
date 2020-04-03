@@ -149,6 +149,19 @@ If the `extract_date_requirement` attribute for an extract defined in `default[:
 
 Additionally, updating `extract_date_requirement` for any extract will cause the extracts to be re-imported into PostgreSQL and replace the existing database.
 
+Pre-generation of tiles is currently done manually by logging in via SSH and running the following command:
+
+```
+$ sudo render_list --all \
+  --map=openstreetmap-carto \
+  --socket=/var/run/renderd/renderd.sock \
+  --tile-dir=/srv/tiles \
+  --num-threads=4 \
+  -z 0 -Z 10                                               
+```
+
+This will take **a long** time to complete. Note that using too many threads will cause the instance to use enough CPU to get throttled by OpenStack, which will cause the instance to be shut down!
+
 [GeoFabrik]: http://download.geofabrik.de
 [Leaflet]: https://leafletjs.com
 [OpenLayers]: http://openlayers.org
