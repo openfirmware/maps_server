@@ -25,11 +25,11 @@ default[:maps_server][:openstreetmap_carto][:bounds] = [-122, 45, -100, 62]
 # to ignore.
 # For extract URLs, use PBF files only.
 default[:maps_server][:openstreetmap_carto][:extracts] = [{
-  extract_date_requirement: "2018-11-30T11:00:00+01:00",
+  extract_date_requirement: "2020-04-07T00:00:00+00:00",
   extract_url:              "https://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf",
   extract_checksum_url:     "https://download.geofabrik.de/north-america/canada/alberta-latest.osm.pbf.md5"
 }, {
-  extract_date_requirement: "2018-11-30T11:00:00+01:00",
+  extract_date_requirement: "2020-04-07T00:00:00+00:00",
   extract_url:              "https://download.geofabrik.de/north-america/canada/saskatchewan-latest.osm.pbf",
   extract_checksum_url:     "https://download.geofabrik.de/north-america/canada/saskatchewan-latest.osm.pbf.md5"
 }]
