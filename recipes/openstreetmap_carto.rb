@@ -392,18 +392,37 @@ end
 # Set up raster tile rendering for the stylesheet
 #################################################
 # Install Node.js for carto
-package %w(nodejs npm)
+remote_nodejs_file = node[:maps_server][:openstreetmap_carto][:nodejs_binaries]
+local_nodejs_file  = "#{Chef::Config[:file_cache_path]}/#{File.basename(remote_nodejs_file)}"
+nodejs_home        = "#{node[:maps_server][:openstreetmap_carto][:nodejs_prefix]}/#{File.basename(local_nodejs_file, ".tar.xz")}"
+npm_bin            = "#{nodejs_home}/bin/npm"
+carto_bin          = "#{nodejs_home}/bin/carto"
+
+remote_file local_nodejs_file do
+  source remote_nodejs_file
+end
+
+directory node[:maps_server][:openstreetmap_carto][:nodejs_prefix] do
+  action :create
+end
+
+execute "Extract NodeJS" do
+  command "tar xJf #{local_nodejs_file} -C #{node[:maps_server][:openstreetmap_carto][:nodejs_prefix]}"
+end
 
 # Update NPM
 execute "Update npm" do
-  command "npm i -g npm"
-  only_if "npm -v | grep -E '^[345]'"
+  command "#{npm_bin} i -g npm"
+  only_if "#{npm_bin} -v | grep -E '^[345]'"
 end
 
 # Install carto
 execute "Install carto" do
-  command "npm i -g carto"
-  not_if "which carto"
+  command "#{npm_bin} i -g carto"
+  env({
+    PATH: "#{nodejs_home}/bin:#{ENV["PATH"]}"
+  })
+  not_if { ::File.exists?(carto_bin) }
 end
 
 # Update stylesheets with new DB name
@@ -418,7 +437,7 @@ end
 # Compile the cartoCSS stylesheet to mapnik XML
 openstreetmap_carto_xml = "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/mapnik.xml"
 execute "compile openstreetmap-carto" do
-  command "carto project.mml > #{openstreetmap_carto_xml}"
+  command "#{carto_bin} project.mml > #{openstreetmap_carto_xml}"
   cwd "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto"
   not_if { ::File.exists?(openstreetmap_carto_xml) }
 end

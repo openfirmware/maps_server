@@ -13,6 +13,13 @@ default[:maps_server][:openstreetmap_carto][:http_path] = "/osm-carto/"
 # Recommended bounds (in EPSG:4326) that is sent to map clients
 default[:maps_server][:openstreetmap_carto][:bounds] = [-122, 45, -100, 62]
 
+#########
+## NodeJS
+#########
+default[:maps_server][:openstreetmap_carto][:nodejs_binaries] = "https://nodejs.org/dist/v12.16.1/node-v12.16.1-linux-x64.tar.xz"
+default[:maps_server][:openstreetmap_carto][:nodejs_version] = "12.16.1"
+default[:maps_server][:openstreetmap_carto][:nodejs_prefix] = "/opt/nodejs"
+
 ##################
 ## Extract Sources
 ##################
