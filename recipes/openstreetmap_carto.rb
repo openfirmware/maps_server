@@ -439,7 +439,9 @@ openstreetmap_carto_xml = "#{node[:maps_server][:stylesheets_prefix]}/openstreet
 execute "compile openstreetmap-carto" do
   command "#{carto_bin} project.mml > #{openstreetmap_carto_xml}"
   cwd "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto"
-  not_if { ::File.exists?(openstreetmap_carto_xml) }
+  env({
+    PATH: "#{nodejs_home}/bin:#{ENV["PATH"]}"
+  })
 end
 
 # Create tiles directory
