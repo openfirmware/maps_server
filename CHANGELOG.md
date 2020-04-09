@@ -1,6 +1,6 @@
-# maps\_server CHANGELOG
+# `maps_server` CHANGELOG
 
-This file is used to list changes made in each version of the maps\_server cookbook.
+This file is used to list changes made in each version of the `maps_server` cookbook.
 
 # 1.0.0
 
