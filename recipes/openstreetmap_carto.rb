@@ -474,8 +474,8 @@ node.normal[:renderd][:stylesheets][:openstreetmap_carto] = {
 template "/usr/local/etc/renderd.conf" do
   source "renderd.conf.erb"
   variables(
-    num_threads: 4, 
-    tile_dir: "/srv/tiles", 
+    num_threads: node[:maps_server][:renderd_threads],
+    tile_dir: "/srv/tiles",
     plugins_dir: "/usr/lib/mapnik/3.0/input",
     font_dir: "/usr/share/fonts",
     configurations: node[:renderd][:stylesheets].values
