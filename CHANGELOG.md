@@ -2,6 +2,18 @@
 
 This file is used to list changes made in each version of the `maps_server` cookbook.
 
+# 1.0.1
+
+Fixes failed compilations of stylesheets due to distribution NodeJS problems.
+
+* Support updating Postgres database when OSM extracts are updated based on the `extract_date_requirement` in the cookbook attributes
+* Add instructions for manual tile pregeneration
+* Install NodeJS v12 binaries for compiling `openstreetmap-carto` to Mapnik XML
+* Always regenerate `openstreetmap-carto` mapnik XML to catch when a previous compile failed or an in-place update to the stylesheet was applied
+* Use attributes for number of `renderd` threads
+* Extract shapefile archive installation functions to Chef resources `maps_server_install_tgz` and `maps_server_install_zip`
+* Install NodeJS v10 binaries for compiling `arcticwebmap` to Mapnik XML
+
 # 1.0.0
 
 Stable release.
