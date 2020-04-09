@@ -23,8 +23,9 @@ git awm_path do
   user node[:maps_server][:render_user]
 end
 
+###################
 # Download Extracts
-
+###################
 extract_path = "#{node[:maps_server][:data_prefix]}/extract"
 directory extract_path do
   recursive true
@@ -76,7 +77,9 @@ awm_settings[:extracts].each do |extract|
   end
 end
 
+##################################
 # Optimize PostgreSQL for Imports.
+##################################
 # Only activate this configuration if osm2pgsql runs.
 import_conf = node[:postgresql][:settings][:defaults].merge(node[:postgresql][:settings][:import])
 
@@ -121,6 +124,9 @@ end
   end
 end
 
+###################
+# Import Extract(s)
+###################
 # Join extracts into one large extract file
 package "osmosis"
 
@@ -198,21 +204,42 @@ template "tiles-configuration" do
   notifies :reload, "service[postgresql]", :immediate
 end
 
-# Install Node.js for stylesheet tools
-# TODO: Maybe install a specific version of node to a prefix and use that?
-package %w(nodejs npm)
+#################################################
+# Set up raster tile rendering for the stylesheet
+#################################################
+# Install Node.js for carto
+remote_nodejs_file = node[:maps_server][:arcticwebmap][:nodejs_binaries]
+local_nodejs_file  = "#{Chef::Config[:file_cache_path]}/#{File.basename(remote_nodejs_file)}"
+nodejs_home        = "#{node[:maps_server][:arcticwebmap][:nodejs_prefix]}/#{File.basename(local_nodejs_file, ".tar.xz")}"
+node_bin           = "#{nodejs_home}/bin/node"
+npm_bin            = "#{nodejs_home}/bin/npm"
+
+remote_file local_nodejs_file do
+  source remote_nodejs_file
+end
+
+directory node[:maps_server][:arcticwebmap][:nodejs_prefix] do
+  action :create
+end
+
+execute "Extract NodeJS" do
+  command "tar xJf #{local_nodejs_file} -C #{node[:maps_server][:arcticwebmap][:nodejs_prefix]}"
+end
 
 # Update NPM
 execute "Update npm" do
-  command "npm i -g npm"
-  only_if "npm -v | grep -E '^[345]'"
+  command "#{npm_bin} i -g npm"
+  only_if "#{npm_bin} -v | grep -E '^[345]'"
 end
 
+# TODO: Use more sophisticated "not_if" to handle when stylesheet
+#       is updated
 execute "install packages for stylesheet" do
-  command "npm install"
+  command "#{npm_bin} install"
   env(
     NPM_CONFIG_CACHE: "/home/#{node[:maps_server][:render_user]}/.npm",
-    NPM_CONFIG_TMP: "/home/#{node[:maps_server][:render_user]}/tmp"
+    NPM_CONFIG_TMP:   "/home/#{node[:maps_server][:render_user]}/tmp",
+    PATH:             "#{nodejs_home}/bin:#{ENV["PATH"]}"
   )
   cwd awm_path
   user node[:maps_server][:render_user]
@@ -237,11 +264,12 @@ directory "#{awm_path}/openstreetmap-carto/data/awm" do
 end
 
 execute "install shapefiles/rasters" do
-  command "node scripts/get-datafiles.js"
+  command "#{node_bin} scripts/get-datafiles.js"
   cwd awm_path
   env(
     NPM_CONFIG_CACHE: "/home/#{node[:maps_server][:render_user]}/.npm",
-    NPM_CONFIG_TMP: "/home/#{node[:maps_server][:render_user]}/tmp"
+    NPM_CONFIG_TMP:   "/home/#{node[:maps_server][:render_user]}/tmp",
+    PATH:             "#{nodejs_home}/bin:#{ENV["PATH"]}"
   )
   user node[:maps_server][:render_user]
   timeout 3600
@@ -301,10 +329,11 @@ end
 # Compile the cartoCSS stylesheet to mapnik XML
 arcticwebmap_xml = "#{awm_path}/arcticwebmap.xml"
 execute "compile awm-styles" do
-  command "node scripts/compile.js xml"
+  command "#{node_bin} scripts/compile.js xml"
   env(
     NPM_CONFIG_CACHE: "/home/#{node[:maps_server][:render_user]}/.npm",
-    NPM_CONFIG_TMP: "/home/#{node[:maps_server][:render_user]}/tmp"
+    NPM_CONFIG_TMP:   "/home/#{node[:maps_server][:render_user]}/tmp",
+    PATH:             "#{nodejs_home}/bin:#{ENV["PATH"]}"
   )
   cwd awm_path
   user node[:maps_server][:render_user]

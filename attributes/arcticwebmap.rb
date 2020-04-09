@@ -13,6 +13,13 @@ default[:maps_server][:arcticwebmap][:http_path] = "/awm/"
 # Recommended bounds (in EPSG:4326) that is sent to map clients
 default[:maps_server][:arcticwebmap][:bounds] = [-180, 40, 0, 90]
 
+#########
+## NodeJS
+#########
+default[:maps_server][:arcticwebmap][:nodejs_binaries] = "https://nodejs.org/dist/latest-v10.x/node-v10.20.0-linux-x64.tar.xz"
+default[:maps_server][:arcticwebmap][:nodejs_version] = "10.20.0"
+default[:maps_server][:arcticwebmap][:nodejs_prefix] = "/opt/nodejs"
+
 ##################
 ## Extract Sources
 ##################
