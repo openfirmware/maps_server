@@ -259,48 +259,6 @@ directory "#{osm_carto_path}/data" do
   action :create
 end
 
-# Install files from a gzipped tar file into a install directory.
-# tar will extract all contents into a single directory, ignoring any
-# directory structure inside the archive.
-# If `check_file` already exists, then it will not run.
-def install_tgz(file, install_directory, check_file)
-  basename = ::File.basename(file, ".tgz")
-
-  script "install #{file}" do
-    cwd ::File.dirname(file)
-    code <<-EOH
-    mkdir -p #{basename} &&
-    tar -C #{install_directory} -x -z -f #{file} &&
-    cp -r #{basename} #{install_directory}/.
-    EOH
-    not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
-    group "root"
-    interpreter "bash"
-    user "root"
-  end
-end
-
-# Install files from a zip file into a install directory.
-# zip will use -j to extract contents into a single directory, so zip
-# files that do or don't put their contents in a directory don't matter.
-# If `check_file` already exists, then it will not run.
-def install_zip(file, install_directory, check_file)
-  basename = ::File.basename(file, ".zip")
-
-  script "install #{file}" do
-    cwd ::File.dirname(file)
-    code <<-EOH
-    mkdir -p #{basename} &&
-    unzip -j -o -d #{basename} #{file} &&
-    cp -r #{basename} #{install_directory}/.
-    EOH
-    not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
-    group "root"
-    interpreter "bash"
-    user "root"
-  end
-end
-
 # Download an archive from `url`, extract its contents, and move the
 # contents into `install_directory`.
 # If the downloaded archive file exists, the download step is skipped.
@@ -317,9 +275,25 @@ def install_shapefiles(url, install_directory, check_file)
   extension = ::File.extname(filename)
   case extension
     when ".tgz"
-      install_tgz(download_path, install_directory, check_file)
+      # Install files from a gzipped tar file into a install directory.
+      # tar will extract all contents into a single directory, ignoring any
+      # directory structure inside the archive.
+      # If `check_file` already exists, then it will not run.
+      maps_server_install_tgz "install shapefile #{download_path}" do
+        archive download_path
+        directory install_directory
+        not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
+      end
     when ".zip"
-      install_zip(download_path, install_directory, check_file)
+      # Install files from a zip file into a install directory.
+      # zip will use -j to extract contents into a single directory, so zip
+      # files that do or don't put their contents in a directory don't matter.
+      # If `check_file` already exists, then it will not run.
+      maps_server_install_zip "install shapefile #{download_path}" do
+        archive download_path
+        directory install_directory
+        not_if { !check_file.nil? && !check_file.empty? && ::File.exists?(check_file) }
+      end
   end
 end
 
