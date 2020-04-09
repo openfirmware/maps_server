@@ -3,6 +3,7 @@
 # Recipe:: openstreetmap-carto
 #
 # Copyright:: 2018–2020, James Badger, Apache-2.0 License.
+require 'semverse'
 
 carto_settings = node[:maps_server][:openstreetmap_carto]
 
@@ -300,29 +301,8 @@ end
 # Specify shapefiles to download and extract.
 # check: skip extract step if this file exists
 # url: source of archive to download. Will not re-download file.
-shapefiles = [{
-  check: "#{osm_carto_path}/data/world_boundaries-spherical/world_bnd_m.shp",
-  url: "https://planet.openstreetmap.org/historical-shapefiles/world_boundaries-spherical.tgz"
-},
-{
-  check: "#{osm_carto_path}/data/simplified-land-polygons-complete-3857/simplified_land_polygons.shp",
-  url: "https://osmdata.openstreetmap.de/download/simplified-land-polygons-complete-3857.zip"
-},{
-  check: "#{osm_carto_path}/data/ne_110m_admin_0_boundary_lines_land/ne_110m_admin_0_boundary_lines_land.shp",
-  url: "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_boundary_lines_land.zip"
-}, {
-  check: "#{osm_carto_path}/data/land-polygons-split-3857/land_polygons.shp",
-  url: "https://osmdata.openstreetmap.de/download/land-polygons-split-3857.zip"
-}, {
-  check: "#{osm_carto_path}/data/antarctica-icesheet-polygons-3857/icesheet_polygons.shp",
-  url: "https://osmdata.openstreetmap.de/download/antarctica-icesheet-polygons-3857.zip"
-}, {
-  check: "#{osm_carto_path}/data/antarctica-icesheet-outlines-3857/icesheet_outlines.shp",
-  url: "https://osmdata.openstreetmap.de/download/antarctica-icesheet-outlines-3857.zip"
-}]
-
-shapefiles.each do |source|
-  install_shapefiles(source[:url], "#{osm_carto_path}/data", source[:check])
+node[:maps_server][:openstreetmap_carto][:shapefiles].each do |source|
+  install_shapefiles(source[:url], "#{osm_carto_path}/data", "#{osm_carto_path}/#{source[:check]}")
 end
 
 # Install fonts for stylesheet
@@ -347,7 +327,10 @@ script "install noto-emoji" do
   not_if { ::File.exists?("/usr/local/share/fonts/NotoEmoji-Regular.ttf") }
 end
 
-# Set up additional PostgreSQL indexes for the stylesheet
+# Set up additional PostgreSQL indexes for the stylesheet, as defined
+# by the `openstreetmap-carto` project. A state file with the stylesheet
+# version is created afterwards to prevent a re-index on every 
+# chef-client run.
 osm_carto_indexes_file = "#{node[:maps_server][:data_prefix]}/extract/openstreetmap-carto-indexes"
 
 maps_server_execute "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/indexes.sql" do
@@ -355,11 +338,12 @@ maps_server_execute "#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-ca
   database carto_settings[:database_name]
   timeout 86400
   not_if { ::File.exists?(osm_carto_indexes_file) }
+  notifies :create, "file[#{osm_carto_indexes_file}]", :immediately
 end
 
 file osm_carto_indexes_file do
-  action :touch
-  not_if { ::File.exists?(osm_carto_indexes_file) }
+  content node[:maps_server][:openstreetmap_carto][:git_ref]
+  action :nothing
 end
 
 #################################################
@@ -530,3 +514,87 @@ service "renderd" do
   action :restart
 end
 
+#################
+# Upgrade Cleanup
+#################
+# Remove resources created by earlier stylesheet versions that are no
+# longer used in the stylesheet.
+
+# Get the currently specified stylesheet version to determine which
+# patches to apply. Be sure to omit the leading `v` character or else it
+# will fail to parse.
+stylesheet_version = Semverse::Version.new(node[:maps_server][:openstreetmap_carto][:git_ref][1..-1])
+
+##########################################
+# openstreetmap-carto v4.21.0 (2019-05-01)
+##########################################
+# https://github.com/gravitystorm/openstreetmap-carto/blob/master/CHANGELOG.md#v4210---2019-05-01
+
+# 1. Remove `world_boundaries-spherical`
+file "#{node[:maps_server][:data_prefix]}/world_boundaries-spherical.tgz" do
+  action :delete
+  only_if {
+    ::File.exists?("#{node[:maps_server][:data_prefix]}/world_boundaries-spherical.tgz") &&
+    stylesheet_version >= Semverse::Version.new("4.21.0")
+  }
+end
+
+directory "#{node[:maps_server][:data_prefix]}/world_boundaries-spherical" do
+  recursive true
+  action :delete
+  only_if {
+    ::Dir.exists?("#{node[:maps_server][:data_prefix]}/world_boundaries-spherical") &&
+    stylesheet_version >= Semverse::Version.new("4.21.0")
+  }
+end
+
+# 2. Remove `simplified-land-polygons-complete-3857`
+file "#{node[:maps_server][:data_prefix]}/simplified-land-polygons-complete-3857.zip" do
+  action :delete
+  only_if {
+    ::File.exists?("#{node[:maps_server][:data_prefix]}/simplified-land-polygons-complete-3857.zip") &&
+    stylesheet_version >= Semverse::Version.new("4.21.0")
+  }
+end
+
+directory "#{node[:maps_server][:data_prefix]}/simplified-land-polygons-complete-3857" do
+  recursive true
+  action :delete
+  only_if {
+    ::Dir.exists?("#{node[:maps_server][:data_prefix]}/simplified-land-polygons-complete-3857") &&
+    stylesheet_version >= Semverse::Version.new("4.21.0")
+  }
+end
+
+# 3. Remove `land-polygons-split-3857`
+file "#{node[:maps_server][:data_prefix]}/land-polygons-split-3857.zip" do
+  action :delete
+  only_if {
+    ::File.exists?("#{node[:maps_server][:data_prefix]}/land-polygons-split-3857.zip") &&
+    stylesheet_version >= Semverse::Version.new("4.21.0")
+  }
+end
+
+directory "#{node[:maps_server][:data_prefix]}/land-polygons-split-3857" do
+  recursive true
+  action :delete
+  only_if {
+    ::Dir.exists?("#{node[:maps_server][:data_prefix]}/land-polygons-split-3857") &&
+    stylesheet_version >= Semverse::Version.new("4.21.0")
+  }
+end
+
+# 4. Remove `planet_osm_polygon_military` index and rebuild indexes.
+# If `osm_carto_indexes_file` is empty, then it was generated for a
+# stylesheet version *before* v4.21.0, and the index should be rebuilt
+# for v4.21.0.
+maps_server_execute "DROP INDEX IF EXISTS planet_osm_polygon_military" do
+  cluster "11/main"
+  database carto_settings[:database_name]
+  notifies :delete, "file[#{osm_carto_indexes_file}]", :immediately
+  notifies :run, "maps_server_execute[#{node[:maps_server][:stylesheets_prefix]}/openstreetmap-carto/indexes.sql]", :immediately
+  only_if { 
+    ::File.empty?(osm_carto_indexes_file) &&
+    stylesheet_version >= Semverse::Version.new("4.21.0")
+  }
+end

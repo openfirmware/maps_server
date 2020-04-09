@@ -3,7 +3,7 @@
 #########################
 
 # Source repo and branch/tag/ref
-default[:maps_server][:openstreetmap_carto][:git_ref] = "v4.20.0"
+default[:maps_server][:openstreetmap_carto][:git_ref] = "v4.21.1"
 default[:maps_server][:openstreetmap_carto][:git_repo] = "https://github.com/gravitystorm/openstreetmap-carto"
 
 # Postgres Database to be created and loaded with OSM data
@@ -47,6 +47,27 @@ default[:maps_server][:openstreetmap_carto][:extracts] = [{
 # max latitude
 default[:maps_server][:openstreetmap_carto][:crop_bounding_box] = []
 # default[:osm2pgsql][:crop_bounding_box] = [-115, 50, -113, 52]
+
+# Shapefiles for the stylesheet
+# check: skip extract step if this file exists (relative to
+#        installation directory)
+# url: source of archive to download. Will not re-download file.
+default[:maps_server][:openstreetmap_carto][:shapefiles] = [{
+  check: "data/simplified-water-polygons-split-3857/simplified_water_polygons.shp",
+  url: "https://osmdata.openstreetmap.de/download/simplified-water-polygons-split-3857.zip"
+},{
+  check: "data/water-polygons-split-3857/water_polygons.shp",
+  url: "https://osmdata.openstreetmap.de/download/water-polygons-split-3857.zip"
+},{
+  check: "data/ne_110m_admin_0_boundary_lines_land/ne_110m_admin_0_boundary_lines_land.shp",
+  url: "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_boundary_lines_land.zip"
+}, {
+  check: "data/antarctica-icesheet-polygons-3857/icesheet_polygons.shp",
+  url: "https://osmdata.openstreetmap.de/download/antarctica-icesheet-polygons-3857.zip"
+}, {
+  check: "data/antarctica-icesheet-outlines-3857/icesheet_outlines.shp",
+  url: "https://osmdata.openstreetmap.de/download/antarctica-icesheet-outlines-3857.zip"
+}]
 
 # OSM2PGSQL Node Cache Size in Megabytes
 # Default is 800 MB.
