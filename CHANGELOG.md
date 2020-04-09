@@ -2,6 +2,18 @@
 
 This file is used to list changes made in each version of the `maps_server` cookbook.
 
+# 1.1.0
+
+Supports latest "4.x" `openstreetmap-carto` stylesheets. A **fresh** cookbook deployment will work with the following versions:
+
+* v4.25.0
+* v4.24.1
+* v4.23.0
+* v4.22.0
+* v4.21.1
+
+If the node *already* has `v4.20.0` installed, then `v1.1.0` of this cookbook should be safe to install. Installing this version of the cookbook on a fresh node with `v4.20.0` will fail to install the land polygons needed for that version of `openstreetmap-carto`.
+
 # 1.0.1
 
 Fixes failed compilations of stylesheets due to distribution NodeJS problems.
