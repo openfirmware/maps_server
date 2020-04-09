@@ -341,10 +341,10 @@ node.normal[:renderd][:stylesheets][:arcticwebmap] = {
 template "/usr/local/etc/renderd.conf" do
   source "renderd.conf.erb"
   variables(
-    num_threads: node[:maps_server][:renderd_threads],
-    tile_dir: "/srv/tiles",
-    plugins_dir: "/usr/lib/mapnik/3.0/input",
-    font_dir: "/usr/share/fonts",
+    num_threads:    node[:maps_server][:renderd_threads],
+    tile_dir:       "/srv/tiles",
+    plugins_dir:    "/usr/lib/mapnik/3.0/input",
+    font_dir:       "/usr/share/fonts",
     configurations: node[:renderd][:stylesheets].values
   )
   notifies :restart, "service[renderd]"
@@ -388,20 +388,20 @@ end
 # Leaflet/OpenLayers configuration
 node.normal[:maps_server][:tile_providers][:arcticwebmap] = {
   attribution: "(c) OpenStreetMap contributors, CC-BY-SA",
-  bounds: awm_settings[:bounds],
-  default: {
-    latitude: awm_settings[:latitude],
+  bounds:      awm_settings[:bounds],
+  default:     {
+    latitude:  awm_settings[:latitude],
     longitude: awm_settings[:longitude],
-    zoom: awm_settings[:zoom]
+    zoom:      awm_settings[:zoom]
   },
   description: "Canadian Arctic Web Map",
-  minzoom: 0,
-  maxzoom: 22,
-  name: "arcticwebmap",
-  scheme: "xyz",
-  srs: "+proj=laea +lat_0=90 +lon_0=-100 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs",
-  srsName: "EPSG:3573",
-  tiles: [ awm_settings[:http_path] ]
+  minzoom:     0,
+  maxzoom:     22,
+  name:        "arcticwebmap",
+  scheme:      "xyz",
+  srs:         "+proj=laea +lat_0=90 +lon_0=-100 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs",
+  srsName:     "EPSG:3573",
+  tiles:       [ awm_settings[:http_path] ]
 }
 
 # Tile provider configuration file for Leaflet and OpenLayers

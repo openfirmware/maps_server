@@ -474,10 +474,10 @@ node.normal[:renderd][:stylesheets][:openstreetmap_carto] = {
 template "/usr/local/etc/renderd.conf" do
   source "renderd.conf.erb"
   variables(
-    num_threads: node[:maps_server][:renderd_threads],
-    tile_dir: "/srv/tiles",
-    plugins_dir: "/usr/lib/mapnik/3.0/input",
-    font_dir: "/usr/share/fonts",
+    num_threads:    node[:maps_server][:renderd_threads],
+    tile_dir:       "/srv/tiles",
+    plugins_dir:    "/usr/lib/mapnik/3.0/input",
+    font_dir:       "/usr/share/fonts",
     configurations: node[:renderd][:stylesheets].values
   )
   notifies :restart, "service[renderd]"
@@ -521,20 +521,20 @@ end
 # Leaflet/OpenLayers configuration
 node.normal[:maps_server][:tile_providers][:openstreetmap_carto] = {
   attribution: "(c) OpenStreetMap contributors, CC-BY-SA",
-  bounds: carto_settings[:bounds],
-  default: {
-    latitude: carto_settings[:latitude],
+  bounds:      carto_settings[:bounds],
+  default:     {
+    latitude:  carto_settings[:latitude],
     longitude: carto_settings[:longitude],
-    zoom: carto_settings[:zoom]
+    zoom:      carto_settings[:zoom]
   },
   description: "openstreetmap-carto",
-  minzoom: 0,
-  maxzoom: 22,
-  name: "openstreetmap-carto",
-  scheme: "xyz",
-  srs: "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs",
-  srsName: "EPSG:3857",
-  tiles: [ carto_settings[:http_path] ]
+  minzoom:     0,
+  maxzoom:     22,
+  name:        "openstreetmap-carto",
+  scheme:      "xyz",
+  srs:         "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs",
+  srsName:     "EPSG:3857",
+  tiles:       [ carto_settings[:http_path] ]
 }
 
 # Tile provider configuration file for Leaflet and OpenLayers
