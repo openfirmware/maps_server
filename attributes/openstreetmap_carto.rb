@@ -3,7 +3,7 @@
 #########################
 
 # Source repo and branch/tag/ref
-default[:maps_server][:openstreetmap_carto][:git_ref] = "v4.22.0"
+default[:maps_server][:openstreetmap_carto][:git_ref] = "v4.23.0"
 default[:maps_server][:openstreetmap_carto][:git_repo] = "https://github.com/gravitystorm/openstreetmap-carto"
 
 # Postgres Database to be created and loaded with OSM data
