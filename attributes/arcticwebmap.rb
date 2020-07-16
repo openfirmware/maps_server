@@ -16,7 +16,8 @@ default[:maps_server][:arcticwebmap][:bounds] = [-180, 40, 0, 90]
 #########
 ## NodeJS
 #########
-default[:maps_server][:arcticwebmap][:nodejs_binaries] = "https://nodejs.org/download/release/v10.20.0/node-v10.20.0-linux-x64.tar.gz"
+# Use the "xz" version.
+default[:maps_server][:arcticwebmap][:nodejs_binaries] = "https://nodejs.org/download/release/v10.20.0/node-v10.20.0-linux-x64.tar.xz"
 default[:maps_server][:arcticwebmap][:nodejs_version] = "10.20.0"
 default[:maps_server][:arcticwebmap][:nodejs_prefix] = "/opt/nodejs"
 
